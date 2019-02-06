@@ -7,11 +7,19 @@ namespace Test
 {
     public class Test
     {
-        public string SampleFileRoot
+        public string SampleFilesRoot
         {
             get
             {
                 return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\..\..\SampleFiles"));
+            }
+        }
+
+        public string TempFilesRoot
+        {
+            get
+            {
+                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\..\..\TempFiles"));
             }
         }
     }

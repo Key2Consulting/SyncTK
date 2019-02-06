@@ -7,43 +7,72 @@ namespace SyncTK
     public class Sync
     {
         #region Pipeline Components
-        protected List<Component> _source = new List<Component>();
-        protected List<Component> _target = new List<Component>();
-        protected List<Component> _reader = new List<Component>();
-        protected List<Component> _writer = new List<Component>();
-        protected List<Component> _extractQuery = new List<Component>();
+        protected List<Component> _component = new List<Component>();
         #endregion
 
         #region Default Component Properties
+        internal int _maxDOP = 3;
         #endregion
 
         #region Client Builder Interface
-        public Sync(Connector connector)
+        public static Sync Source(SourceComponent connector)
         {
-            _source.Add(connector);
+            var sync = new Sync();
+            sync._component.Add(connector);
+            return sync;
         }
 
-        public static Sync Source(Connector connector)
+        public Sync Read(Component reader)
         {
-            return new Sync(connector);
-        }
-
-        public Sync Target(Connector connector)
-        {
-            _target.Add(connector);
+            _component.Add(reader);
             return this;
         }
 
-        public Sync Read(Reader reader)
+        public Sync Write(Component writer)
         {
-            _reader.Add(reader);
+            _component.Add(writer);
             return this;
         }
 
-        public Sync Write(Writer writer)
+        public Sync Target(SourceComponent connector)
         {
-            _writer.Add(writer);
+            _component.Add(connector);
             return this;
+        }
+
+        public void Exec(int maxDOP = 3)
+        {
+            _maxDOP = maxDOP;
+
+            // Run component validation
+            Component previousComponent = null;
+            foreach (var currentComponent in _component)
+            {
+                currentComponent.Validate(this, previousComponent);
+                previousComponent = currentComponent;
+            }
+
+            // Component processing
+            previousComponent = null;
+            IEnumerable<object> previousOutput = null;
+            IEnumerable<object> currentOutput = null;
+            foreach (var currentComponent in _component)
+            {
+                currentComponent.Begin(this, previousComponent);
+                currentOutput = currentComponent.Process(this, previousComponent, previousOutput);
+                currentComponent.End(this, previousComponent);
+                previousComponent = currentComponent;
+                previousOutput = currentOutput;
+            }
+        }
+
+        public string SerializeJSON()
+        {
+            return "";
+        }
+
+        public void DeserializeJSON(string JSON)
+        {
         }
         #endregion
     }

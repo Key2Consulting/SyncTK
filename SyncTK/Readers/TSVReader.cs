@@ -7,33 +7,28 @@ using System.Text.RegularExpressions;
 
 namespace SyncTK
 {
-    public class TSVReader : Reader, System.Data.IDataReader
+    internal class TSVReader : System.Data.IDataReader
     {
-        bool _initialized = false;
-        string _delimeter;
-        string[] _splitDelimeter;
-        bool _header;
-        System.Collections.ArrayList _columnName;
-        System.Collections.ArrayList _readBuffer;
-        IEnumerable<StreamReader> _reader;
+        protected const string _delimeter = "\t";
+        protected string[] _splitDelimeter;
+        protected bool _header;
+        protected System.Collections.ArrayList _columnName;
+        protected System.Collections.ArrayList _readBuffer;
+        protected StreamReader _reader;
+        protected int _readCount = 0;
 
-        public TSVReader(bool header)
+        public TSVReader(System.IO.StreamReader reader, bool header)
         {
-            this._header = header;
-            this._delimeter = "\t";
-            this._splitDelimeter = new string[] { this._delimeter };
-        }
-
-        protected override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
-        {
-            
+            _reader = reader;
+            _header = header;
+            _splitDelimeter = new string[] { _delimeter };
         }
 
         public object this[int i]
         {
             get
             {
-                return this._readBuffer[i];
+                return _readBuffer[i];
             }
         }
 
@@ -41,7 +36,7 @@ namespace SyncTK
         {
             get
             {
-                return this._readBuffer[this._columnName.IndexOf(name)];
+                return _readBuffer[_columnName.IndexOf(name)];
             }
         }
 
@@ -57,7 +52,7 @@ namespace SyncTK
         {
             get
             {
-                return this._reader.BaseStream.Position > 0;
+                return _reader.BaseStream.Position > 0;
             }
         }
 
@@ -73,18 +68,18 @@ namespace SyncTK
         {
             get
             {
-                return this._columnName.Count;
+                return _columnName.Count;
             }
         }
 
         public void Close()
         {
-            this._reader.Close();
+            _reader.Close();
         }
 
         public void Dispose()
         {
-            this._reader.Dispose();
+            _reader.Dispose();
         }
 
         public bool GetBoolean(int i)
@@ -171,22 +166,22 @@ namespace SyncTK
 
         public string GetName(int i)
         {
-            return this._columnName[i].ToString();
+            return _columnName[i].ToString();
         }
 
         public int GetOrdinal(string name)
         {
-            return this._columnName.IndexOf(name);
+            return _columnName.IndexOf(name);
         }
 
         public string GetString(int i)
         {
-            return (string)this._readBuffer[i];
+            return (string)_readBuffer[i];
         }
 
         public object GetValue(int i)
         {
-            return this._readBuffer[i];
+            return _readBuffer[i];
         }
 
         public int GetValues(object[] values)
@@ -196,7 +191,7 @@ namespace SyncTK
 
         public bool IsDBNull(int i)
         {
-            return (this._readBuffer[i] == null);
+            return (_readBuffer[i] == null);
         }
 
         public bool NextResult()
@@ -206,59 +201,63 @@ namespace SyncTK
 
         public bool Read()
         {
-            string line = this._reader.ReadLine();        // TODO: how could a row delimeter be applied here?
+            // Read the next line from the input stream.
+            string line = _reader.ReadLine();
+            _readCount++;
+
             try
             {
-                if (!this._initialized) {
-                    this._initialized = true;
+                // If no data was read, we must be at the end of the file.
+                if (line == null || line.Trim().Length == 0)
+                {
+                    _reader.Close();
+                    return false;
+                }
+
+                // Use simple delimeter parsing (i.e. Split) with TSV.
+                var columns = line.Split(_splitDelimeter, StringSplitOptions.None);
+
+                // If first record, initialize. Must initialize within our read logic since we're streaming and
+                // we need to gather some basic information about the data such as column count.
+                if (_readCount == 1) {
 
                     // Even if no header is set, we still need to know how many columns there are.
-                    var columns = line.Split(this._splitDelimeter, StringSplitOptions.None);
-                    this._columnName = new System.Collections.ArrayList(columns.Length);
-                    this._readBuffer = new System.Collections.ArrayList(columns.Length);           // preallocate once and only once for performance
+                    _columnName = new System.Collections.ArrayList(columns.Length);
+                    _readBuffer = new System.Collections.ArrayList(columns.Length);           // preallocate once and only once for performance
 
                     // Foreach of the extract columns from the first row
                     for (var i = 0; i < columns.Length; i++)
                     {
-                        this._columnName.Add(columns[i]);
-                        this._readBuffer.Add(null);
+                        _columnName.Add(columns[i]);
+                        _readBuffer.Add(null);
 
                         // If we don't have a header, use the column number as the name
-                        if (!this._header)
+                        if (!_header)
                         {
-                            this._columnName[i] = i.ToString();
+                            _columnName[i] = i.ToString();
                         }
                     }
 
                     // If header isn't first line, must reset read back to beginning.
-                    if (!this._header)
+                    if (!_header)
                     {
-                        this._reader.BaseStream.Position = 0;
-                        this._reader.DiscardBufferedData();
+                        _reader.BaseStream.Position = 0;
+                        _reader.DiscardBufferedData();
                     }
                 }
-                
-                if (line == null || line.Trim().Length == 0)
-                {
-                    this._reader.Close();
-                    return false;
-                }
 
-                // Otherwise, use simple delimeter parsing (i.e. Split)
-                var columns = line.Split(this._splitDelimeter, StringSplitOptions.None);
 
                 // Foreach of the extract columns
                 for (var i = 0; i < columns.Length; i++)
                 {
-                    this._readBuffer[i] = columns[i];
+                    _readBuffer[i] = columns[i];
                 }
 
                 return true;
             }
             catch (Exception ex)
             {
-                line = this._reader.ReadLine();
-                throw new Exception(line, ex);
+                throw new Exception($"Error in TSVReader reading line {_readCount}.", ex);
             }
         }
 
@@ -279,11 +278,11 @@ namespace SyncTK
             dt.Columns.Add("UdtAssemblyQualifiedName");
 
             // For each column in the input text file
-            for (int i = 0; i < this._columnName.Count; i++)
+            for (int i = 0; i < _columnName.Count; i++)
             {
                 // Add a row describing that column's schema.
                 DataRow textCol = dt.NewRow();
-                textCol["ColumnName"] = this._columnName[i];
+                textCol["ColumnName"] = _columnName[i];
                 textCol["ColumnOrdinal"] = i;
                 textCol["ColumnSize"] = -1;
                 textCol["DataType"] = typeof(System.String);

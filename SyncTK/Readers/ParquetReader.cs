@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    class ParquetReader
+    internal class ParquetReader
     {
     }
 }

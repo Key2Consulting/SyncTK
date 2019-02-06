@@ -2,29 +2,28 @@
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncTK
 {
-    public class FileConnector : Connector
+    public class FileSourceComponent : SourceComponent
     {
         protected List<string> _paths = new List<string>();
         protected List<string> _rootPaths = new List<string>();
         protected List<string> _fileNames = new List<string>();
 
-        public FileConnector(string path)
+        public FileSourceComponent(string path)
         {
             _paths.Add(path);
         }
 
-        public FileConnector(string[] paths)
+        public FileSourceComponent(string[] paths)
         {
             _paths.AddRange(paths);
         }
 
-        protected override void Validate(Sync pipeline, Component upstreamComponent)
+        internal override void Validate(Sync pipeline, Component upstreamComponent)
         {
             // For every path we're loading.
             foreach (var path in _paths)
@@ -49,12 +48,10 @@ namespace SyncTK
             }
         }
 
-        protected override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
         {
             // For every path we're loading.
-            var tasks = _rootPaths.AsParallel().WithDegreeOfParallelism(3).SelectMany<StreamReader>(x => new StreamReader(x));
-            
-            var tasks = Parallel.For(0, _rootPaths.Count, this.ParallelOptions, i => SelectFile(i)
+            for (int i = 0; i < _rootPaths.Count; i++)
             {
                 // If the name contains wildcards.
                 if (_fileNames[i].Contains("*"))
@@ -64,14 +61,14 @@ namespace SyncTK
                     foreach (var item in paths)
                     {
                         var reader = new StreamReader(item);
-                        return reader;
+                        yield return reader;
                     }
                 }
                 else
                 {
                     // Else, just a single file.
                     var reader = new StreamReader(_rootPaths[i] + Path.DirectorySeparatorChar + _fileNames[i]);
-                    return reader;
+                    yield return reader;
                 }
             }
         }

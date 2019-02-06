@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
+using System.Data;
+using SyncTK;
 
 namespace SyncTK
 {
-    internal interface IDataWriter
+    public abstract class SourceComponent : Component
     {
-        void Write(StreamWriter writer);
     }
 }

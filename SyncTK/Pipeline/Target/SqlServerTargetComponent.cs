@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    class MemoryConnector
+    internal class SqlServerTargetComponent : TargetComponent
     {
     }
 }

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace SyncTK
 {
-    internal interface IDataWriter
+    class HDFSSourceComponent
     {
-        void Write(StreamWriter writer);
     }
 }

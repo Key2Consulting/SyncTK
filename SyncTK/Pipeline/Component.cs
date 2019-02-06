@@ -9,16 +9,6 @@ namespace SyncTK
     {
         protected string _name = null;
 
-        protected ParallelOptions ParallelOptions
-        {
-            get
-            {
-                var options = new ParallelOptions();
-                options.MaxDegreeOfParallelism = 3;
-                return options;
-            }
-        }
-
         public Component()
         {
         }
@@ -28,20 +18,20 @@ namespace SyncTK
             _name = name;
         }
 
-        protected virtual void Validate(Sync pipeline, Component upstreamComponent)
+        internal virtual void Validate(Sync pipeline, Component upstreamComponent)
         {
         }
 
-        protected virtual void Begin(Sync pipeline, Component upstreamComponent)
+        internal virtual void Begin(Sync pipeline, Component upstreamComponent)
         {
         }
 
-        protected virtual IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal virtual IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
         {
             throw new NotImplementedException();
         }
 
-        protected virtual void End(Sync pipeline, Component upstreamComponent)
+        internal virtual void End(Sync pipeline, Component upstreamComponent)
         {
         }
 

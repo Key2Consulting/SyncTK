@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class Reader : Component
+    public class WriterComponent : Component
     {
     }
 }
