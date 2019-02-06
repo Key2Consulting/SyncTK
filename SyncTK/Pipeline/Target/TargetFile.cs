@@ -69,7 +69,7 @@ namespace SyncTK
                     _streamWriter.Dispose();
                 }
                 _fileNumber++;
-                _streamWriter = new StreamWriter(_path.Replace("*", _fileNumber.ToString()));                
+                _streamWriter = new StreamWriter(_path.Replace("*", this.GetCurrentTimeStampToken() + _fileNumber.ToString()));
             }
 
             return _streamWriter;

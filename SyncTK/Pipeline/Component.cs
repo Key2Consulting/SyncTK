@@ -42,5 +42,10 @@ namespace SyncTK
                 throw new Exception(errorMessage);
             }
         }
+
+        protected string GetCurrentTimeStampToken()
+        {
+            return System.DateTime.Now.ToString("yyyyMMdd_mmssfff");
+        }
     }
 }
