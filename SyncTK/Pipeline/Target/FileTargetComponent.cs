@@ -8,59 +8,69 @@ namespace SyncTK
     public class FileTargetComponent : TargetComponent
     {
         protected string _path = "";
-        protected int _splitCount = 0;
+        protected int _fileRowCountLimit = 0;
         protected int _fileNumber = 0;
+        protected int _rowCounter = 0;
+        protected StreamWriter _streamWriter = null;
 
         public FileTargetComponent(string path)
         {
             _path = path;
         }
 
-        public FileTargetComponent(string path, int splitSize)
+        public FileTargetComponent(string path, int fileRowCountLimit)
         {
             _path = path;
-            _splitCount = splitSize;
+            _fileRowCountLimit = fileRowCountLimit;
         }
 
         internal override void Validate(Sync pipeline, Component upstreamComponent)
         {
-            this.Assert(_splitCount == 0 || _path.Contains("*"), "Splitting output files requires use of wildcard character * in the path.");
+            this.Assert(_fileRowCountLimit == 0 || _path.Contains("*"), "Splitting output files requires use of wildcard character * in the path.");
         }
+
         internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
         {
             foreach (var i in input)
             {
                 var writer = (IDataWriter)i;
-                int rowCounter = 0;
-                var streamWriter = new StreamWriter(GetNextPath());
-                while (writer.Write(streamWriter))
-                {
-                    rowCounter++;
-                    
-                    // If we've met our split limit
-                    if (rowCounter >= _splitCount && _splitCount > 0)
-                    {
-                        streamWriter.Flush();
-                        streamWriter.Close();
-                        streamWriter.Dispose();
-                        streamWriter = new StreamWriter(GetNextPath());
-                    }
-                }
 
-                // Dispose of last writer
-                streamWriter.Flush();
-                streamWriter.Close();
-                streamWriter.Dispose();
+                while (writer.Write(GetNextStreamWriter())) { }
             }
 
             // Targets don't produce output during processing.
             return null;
         }
 
-        protected string GetNextPath()
+        internal override void End(Sync pipeline, Component upstreamComponent)
         {
-            _fileNumber++;
-            return _path.Replace("*", _fileNumber.ToString());
+            // Dispose of last writer
+            if (_streamWriter != null)
+            {
+                _streamWriter.Flush();
+                _streamWriter.Close();
+                _streamWriter.Dispose();
+            }
+        }
+
+        protected StreamWriter GetNextStreamWriter()
+        {
+            _rowCounter++;
+
+            // If we've met our split limit
+            if (_rowCounter >= _fileRowCountLimit && _fileRowCountLimit > 0 || _streamWriter == null)
+            {
+                if (_streamWriter != null)
+                {
+                    _streamWriter.Flush();
+                    _streamWriter.Close();
+                    _streamWriter.Dispose();
+                }
+                _fileNumber++;
+                _streamWriter = new StreamWriter(_path.Replace("*", _fileNumber.ToString()));                
+            }
+
+            return _streamWriter;
         }
     }
 }
