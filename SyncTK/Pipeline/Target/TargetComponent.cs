@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    internal class TargetComponent : Component
+    public abstract class TargetComponent : Component
     {
     }
 }

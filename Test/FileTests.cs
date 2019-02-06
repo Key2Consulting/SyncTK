@@ -10,8 +10,8 @@ namespace Test
             Sync
                 .Source(new FileSourceComponent($"{this.SampleFilesRoot}\\*.txt"))
                 .Read(new TSVReaderComponent(true))
-                .Write(new TSVReaderComponent(true))
-                .Target(new FileSourceComponent($"{this.TempFilesRoot}\\Test1.txt"))
+                .Write(new TSVWriterComponent(true))
+                .Target(new FileTargetComponent($"{this.TempFilesRoot}\\Test1_*.txt"))
                 .Exec();
         }
     }

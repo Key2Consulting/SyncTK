@@ -22,19 +22,19 @@ namespace SyncTK
             return sync;
         }
 
-        public Sync Read(Component reader)
+        public Sync Read(ReaderComponent reader)
         {
             _component.Add(reader);
             return this;
         }
 
-        public Sync Write(Component writer)
+        public Sync Write(WriterComponent writer)
         {
             _component.Add(writer);
             return this;
         }
 
-        public Sync Target(SourceComponent connector)
+        public Sync Target(TargetComponent connector)
         {
             _component.Add(connector);
             return this;

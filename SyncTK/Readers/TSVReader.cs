@@ -16,12 +16,32 @@ namespace SyncTK
         protected System.Collections.ArrayList _readBuffer;
         protected StreamReader _reader;
         protected int _readCount = 0;
+        protected string _firstLine = "";
 
         public TSVReader(System.IO.StreamReader reader, bool header)
         {
             _reader = reader;
             _header = header;
             _splitDelimeter = new string[] { _delimeter };
+
+            // Even if no header is set, we still need to know how many columns there are.
+            _firstLine = _reader.ReadLine();
+            var columns = _firstLine.Split(_splitDelimeter, StringSplitOptions.None);
+            _columnName = new System.Collections.ArrayList(columns.Length);
+            _readBuffer = new System.Collections.ArrayList(columns.Length);           // preallocate once and only once for performance
+
+            // Foreach of the extract columns from the first row
+            for (var i = 0; i < columns.Length; i++)
+            {
+                _columnName.Add(columns[i]);
+                _readBuffer.Add(null);
+
+                // If we don't have a header, use the column number as the name
+                if (!_header)
+                {
+                    _columnName[i] = i.ToString();
+                }
+            }
         }
 
         public object this[int i]
@@ -201,9 +221,17 @@ namespace SyncTK
 
         public bool Read()
         {
-            // Read the next line from the input stream.
-            string line = _reader.ReadLine();
+            // Read the next line from the input stream. If the first line, we've already read it earlier during initialization.
             _readCount++;
+            string line = "";
+            if (_readCount > 0)
+            {
+                line = _reader.ReadLine();
+            }
+            else
+            {
+                line = _firstLine;
+            }
 
             try
             {
@@ -219,33 +247,6 @@ namespace SyncTK
 
                 // If first record, initialize. Must initialize within our read logic since we're streaming and
                 // we need to gather some basic information about the data such as column count.
-                if (_readCount == 1) {
-
-                    // Even if no header is set, we still need to know how many columns there are.
-                    _columnName = new System.Collections.ArrayList(columns.Length);
-                    _readBuffer = new System.Collections.ArrayList(columns.Length);           // preallocate once and only once for performance
-
-                    // Foreach of the extract columns from the first row
-                    for (var i = 0; i < columns.Length; i++)
-                    {
-                        _columnName.Add(columns[i]);
-                        _readBuffer.Add(null);
-
-                        // If we don't have a header, use the column number as the name
-                        if (!_header)
-                        {
-                            _columnName[i] = i.ToString();
-                        }
-                    }
-
-                    // If header isn't first line, must reset read back to beginning.
-                    if (!_header)
-                    {
-                        _reader.BaseStream.Position = 0;
-                        _reader.DiscardBufferedData();
-                    }
-                }
-
 
                 // Foreach of the extract columns
                 for (var i = 0; i < columns.Length; i++)

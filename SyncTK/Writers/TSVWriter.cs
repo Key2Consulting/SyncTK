@@ -20,7 +20,7 @@ namespace SyncTK
             _header = header;
         }
 
-        public void Write(StreamWriter writer)
+        public bool Write(StreamWriter writer)
         {
             try
             {
@@ -65,12 +65,17 @@ namespace SyncTK
 
                     // Next line
                     writer.Write(_newline);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
-            finally
+            catch (Exception ex)
             {
-                // Clean up
-                writer.Dispose();
+                throw new Exception($"Error in TSVWriter writing line {_writeCount}.", ex);
             }
         }
     }
