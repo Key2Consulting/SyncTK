@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SyncTK
 {
-    public class TSVReader : System.Data.IDataReader
+    public class TSVReader : Reader, System.Data.IDataReader
     {
         bool _initialized = false;
         string _delimeter;
@@ -17,19 +17,16 @@ namespace SyncTK
         System.Collections.ArrayList _readBuffer;
         IEnumerable<StreamReader> _reader;
 
-        public TSVReader(IEnumerable<StreamReader> reader, bool header)
+        public TSVReader(bool header)
         {
             this._header = header;
-            this._reader = reader;
-
-            // Initialize read operation.
-            this.Initialize();
-        }
-
-        protected void Initialize()
-        {
             this._delimeter = "\t";
             this._splitDelimeter = new string[] { this._delimeter };
+        }
+
+        protected override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        {
+            
         }
 
         public object this[int i]

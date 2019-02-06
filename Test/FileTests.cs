@@ -7,8 +7,11 @@ namespace Test
     {
         public void Test1()
         {
-            var src = new FileConnector();
-            var r = new TSVReader(src.Export($"{this.SampleFileRoot}\\*.txt"), false);
+            Sync
+                .Source(new FileConnector($"{this.SampleFileRoot}\\*.txt"))
+                .Read(new TSVReader(true))
+                .Write(new TSVWriter())
+                .Target(new FileConnector($"{this.SampleFileRoot}\\*.txt"));
         }
     }
 }

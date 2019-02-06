@@ -9,6 +9,11 @@ namespace SyncTK
 {
     public class SqlServerConnector : DatabaseConnector
     {
+        public static SqlServerConnector From()
+        {
+            return new SqlServerConnector();
+        }
+
         public override IDataReader Export(string query)
         {
             return base.Export(query);
@@ -19,7 +24,7 @@ namespace SyncTK
             return base.Export(schemaName, tableName);
         }
 
-        public override IDataReader Export(SQLTemplate query)
+        public override IDataReader Export(QueryTemplate query)
         {
             return base.Export(query);
         }

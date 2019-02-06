@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class TSVWriter
+    public class TSVWriter : Writer
     {
     }
 }

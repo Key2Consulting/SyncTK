@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SyncTK
+namespace SyncTK.Pipeline
 {
-    public class SQLTemplate
+    internal class Director
     {
     }
 }

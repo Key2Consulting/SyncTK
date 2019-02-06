@@ -16,7 +16,7 @@ namespace SyncTK
             throw new NotImplementedException();
         }
 
-        public virtual IDataReader Export(SQLTemplate query)
+        public virtual IDataReader Export(QueryTemplate query)
         {
             throw new NotImplementedException();
         }
@@ -26,7 +26,7 @@ namespace SyncTK
             throw new NotImplementedException();
         }
 
-        public SQLTemplate ScriptAsTemplate(DataTable schemaTable)
+        public QueryTemplate ScriptAsTemplate(DataTable schemaTable)
         {
             throw new NotImplementedException();
         }
