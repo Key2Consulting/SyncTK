@@ -11,7 +11,7 @@ namespace Test
         {
             get
             {
-                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\Test\SampleFiles"));
+                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\..\..\..\Test\SampleFiles"));
             }
         }
 
@@ -19,7 +19,7 @@ namespace Test
         {
             get
             {
-                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\Test\TempFiles"));
+                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\..\..\..\Test\TempFiles"));
             }
         }
     }

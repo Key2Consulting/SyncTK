@@ -12,6 +12,7 @@ namespace SyncTK
         protected bool _header;
         protected IDataReader _reader;
         protected int _writeCount = 0;
+        protected int _previousFileNumber = -1;
         protected const string _newline = "\r\n";
 
         public TSVWriter(IDataReader reader, bool header)
@@ -20,16 +21,19 @@ namespace SyncTK
             _header = header;
         }
 
-        public bool Write(StreamWriter writer)
+        public bool Write(StreamWriter writer, int fileNumber)
         {
             try
             {
-                // If first row
-                if (_writeCount == 0)
+                // Write the header if specified and whenever we start writing a new file.
+                if (_header && _previousFileNumber != fileNumber)
                 {
-                    // If writing the header
-                    if (_header)
+                    // We may think we're writing to a new file, but really the pipeline chose to have
+                    // us (a new TSVWriter instance) output to an existing stream. In which case, we don't
+                    // write the header.
+                    if (writer.BaseStream.Position == 0)
                     {
+                        _previousFileNumber = fileNumber;
                         // For each column
                         for (int i = 0; i < _reader.FieldCount; i++)
                         {

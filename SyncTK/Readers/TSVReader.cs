@@ -221,10 +221,11 @@ namespace SyncTK
 
         public bool Read()
         {
-            // Read the next line from the input stream. If the first line, we've already read it earlier during initialization.
+            // Read the next line from the input stream. If the first line, we've already read it earlier during initialization
+            // unless it was the header
             _readCount++;
             string line = "";
-            if (_readCount > 0)
+            if (_readCount > 1 || _header)
             {
                 line = _reader.ReadLine();
             }

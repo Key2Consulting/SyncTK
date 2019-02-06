@@ -8,10 +8,10 @@ namespace Test
         public void Test1()
         {
             Sync
-                .Source(new FileSourceComponent($"{this.SampleFilesRoot}\\*.txt"))
-                .Read(new TSVReaderComponent(true))
-                .Write(new TSVWriterComponent(true))
-                .Target(new FileTargetComponent($"{this.TempFilesRoot}\\Test1_*.txt"))
+                .From(new SourceFile($"{this.SampleFilesRoot}\\*.txt"))
+                .WithFormat(new FormatTSV(true))
+                .ConvertTo(new ConvertTSV(true))
+                .Into(new TargetFile($"{this.TempFilesRoot}\\Test1_*.txt"))
                 .Exec();
         }
     }

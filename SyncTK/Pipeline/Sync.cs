@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SyncTK
 {
@@ -11,39 +12,36 @@ namespace SyncTK
         #endregion
 
         #region Default Component Properties
-        internal int _maxDOP = 3;
         #endregion
 
         #region Client Builder Interface
-        public static Sync Source(SourceComponent connector)
+        public static Sync From(SourceComponent connector)
         {
             var sync = new Sync();
             sync._component.Add(connector);
             return sync;
         }
 
-        public Sync Read(ReaderComponent reader)
+        public Sync WithFormat(FormatComponent reader)
         {
             _component.Add(reader);
             return this;
         }
 
-        public Sync Write(WriterComponent writer)
+        public Sync ConvertTo(ConvertComponent writer)
         {
             _component.Add(writer);
             return this;
         }
 
-        public Sync Target(TargetComponent connector)
+        public Sync Into(TargetComponent connector)
         {
             _component.Add(connector);
             return this;
         }
 
-        public void Exec(int maxDOP = 3)
+        public void Exec()
         {
-            _maxDOP = maxDOP;
-
             // Run component validation
             Component previousComponent = null;
             foreach (var currentComponent in _component)
@@ -64,6 +62,14 @@ namespace SyncTK
                 previousComponent = currentComponent;
                 previousOutput = currentOutput;
             }
+        }
+
+        public Task ExecAsync()
+        {
+            return new Task(() =>
+            {
+                this.Exec();
+            });
         }
 
         public string SerializeJSON()
