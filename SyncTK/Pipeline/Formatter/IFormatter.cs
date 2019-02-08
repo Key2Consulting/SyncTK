@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class ConvertComponent : Component
+    public interface IFormatter
     {
     }
 }

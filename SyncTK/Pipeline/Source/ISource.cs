@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class FormatComponent : Component
+    public interface ISource
     {
     }
 }

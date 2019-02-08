@@ -1,13 +1,93 @@
 ﻿using System;
+using System.Data.SqlClient;
+using System.IO;
+using System.Reflection;
+using System.Threading;
+using Xunit;
+using Xunit.Runners;
 
-namespace Test
+namespace SyncTK.Test
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            var test = new FileTests();
-            test.Test1();
+            // Global Setup
+            GlobalSetup();
+
+            // Test Execution
+            var runner = new Runner();
+            string[] tests = {
+                "SyncTK.Test.FileTests",
+                "SyncTK.Test.SqlServerTests"
+            };
+
+            var r = runner.Run(tests);
+
+            // Force a keypress to allow viewing of results.
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("Test Complete");
+            Console.ReadKey();
+
+            // Global Teardown
+            GlobalTearDown();
+
+            return r;
+        }
+
+        static void GlobalSetup()
+        {
+            // Cleanup Temp Files from Last Run
+            System.IO.DirectoryInfo di = new DirectoryInfo(Cfg.TempFilesRoot);
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+            }
+            
+            // Setup SQL Server Test Database
+            string sql = @"
+                ALTER DATABASE [SyncTK] SET SINGLE_USER WITH ROLLBACK IMMEDIATE
+                DROP DATABASE IF EXISTS [SyncTK]
+                CREATE DATABASE [SyncTK]
+                
+                CREATE TABLE [SyncTK].[dbo].[OddTypes](
+	                [ID] [int] NULL,
+	                [Geography] [geography] NULL,
+	                [Xml] [xml] NULL,
+	                [Binary] [binary](50) NULL,
+	                [DateTime2] [datetime2](7) NULL,
+	                [HierarchyID] [hierarchyid] NULL,
+	                [Geometry] [geometry] NULL,
+	                [SmallMoney] [smallmoney] NULL,
+	                [TimeStamp] [timestamp] NULL
+                )
+
+                INSERT INTO [SyncTK].[dbo].[OddTypes]
+                VALUES
+	                (
+		                1
+		                ,geography::Point(47.65100, -122.34900, 4326)
+		                ,'<xml></xml>'
+		                ,CAST('hello world' AS BINARY(50))
+		                ,GETDATE()
+		                ,'/1/'
+		                ,geometry::STGeomFromText('LINESTRING (100 100, 20 180, 180 180)', 0)
+		                ,44.11
+		                ,NULL
+	                )";
+            
+            using (var c = new SqlConnection(@"Server=(LocalDb)\MSSQLLocalDB;Integrated Security=true;Database=master"))
+            {
+                c.Open();
+                var cmd = c.CreateCommand();
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        static void GlobalTearDown()
+        {
+
         }
     }
 }

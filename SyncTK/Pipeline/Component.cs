@@ -18,11 +18,11 @@ namespace SyncTK
             _name = name;
         }
 
-        internal virtual void Validate(Sync pipeline, Component upstreamComponent)
+        internal virtual void Begin(Sync pipeline, Component upstreamComponent)
         {
         }
 
-        internal virtual void Begin(Sync pipeline, Component upstreamComponent)
+        internal virtual void End(Sync pipeline, Component upstreamComponent)
         {
         }
 
@@ -31,7 +31,7 @@ namespace SyncTK
             throw new NotImplementedException();
         }
 
-        internal virtual void End(Sync pipeline, Component upstreamComponent)
+        internal virtual void Validate(Sync pipeline, Component upstreamComponent)
         {
         }
 
@@ -47,5 +47,7 @@ namespace SyncTK
         {
             return System.DateTime.Now.ToString("yyyyMMdd_mmssfff");
         }
+
+
     }
 }

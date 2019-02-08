@@ -8,35 +8,35 @@ namespace SyncTK
     public class Sync
     {
         #region Pipeline Components
-        protected List<Component> _component = new List<Component>();
+        internal List<Component> _component = new List<Component>();
         #endregion
 
         #region Default Component Properties
         #endregion
 
         #region Client Builder Interface
-        public static Sync From(SourceComponent connector)
+        public static Sync From(ISource connector)
         {
             var sync = new Sync();
-            sync._component.Add(connector);
+            sync._component.Add((Component)connector);
             return sync;
         }
 
-        public Sync WithFormat(FormatComponent reader)
+        public Sync WithFormat(IFormatter reader)
         {
-            _component.Add(reader);
+            _component.Add((Component)reader);
             return this;
         }
 
-        public Sync ConvertTo(ConvertComponent writer)
+        public Sync ConvertTo(IConverter writer)
         {
-            _component.Add(writer);
+            _component.Add((Component)writer);
             return this;
         }
 
-        public Sync Into(TargetComponent connector)
+        public Sync Into(ITarget connector)
         {
-            _component.Add(connector);
+            _component.Add((Component)connector);
             return this;
         }
 
@@ -50,17 +50,31 @@ namespace SyncTK
                 previousComponent = currentComponent;
             }
 
-            // Component processing
+            // Pipeline Begin
             previousComponent = null;
-            IEnumerable<object> previousOutput = null;
-            IEnumerable<object> currentOutput = null;
             foreach (var currentComponent in _component)
             {
                 currentComponent.Begin(this, previousComponent);
+                previousComponent = currentComponent;
+            }
+
+            // Pipeline Process
+            IEnumerable<object> previousOutput = null;
+            IEnumerable<object> currentOutput = null;
+            previousComponent = null;
+            foreach (var currentComponent in _component)
+            {
                 currentOutput = currentComponent.Process(this, previousComponent, previousOutput);
-                currentComponent.End(this, previousComponent);
                 previousComponent = currentComponent;
                 previousOutput = currentOutput;
+            }
+
+            // Pipeline End
+            previousComponent = null;
+            foreach (var currentComponent in _component)
+            {
+                currentComponent.End(this, previousComponent);
+                previousComponent = currentComponent;
             }
         }
 

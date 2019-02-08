@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class ConvertTSV : ConvertComponent
+    public class ConvertTSV : Component, IConverter
     {
         bool _header = false;
 
@@ -19,7 +19,8 @@ namespace SyncTK
         {
             foreach (var i in input)
             {
-                var reader = (IDataReader)i;
+                var reader = (TypeConversionReader)i;
+                reader.SetTarget(this.GetType());
                 var writer = new TSVWriter(reader, _header);
                 yield return writer;
             }

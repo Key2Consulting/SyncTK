@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncTK
 {
-    public class TargetFile : TargetComponent
+    public class TargetFile : ConnectorFile, ITarget
     {
         protected string _path = "";
         protected int _fileRowLimit = 0;
@@ -35,7 +36,6 @@ namespace SyncTK
             foreach (var i in input)
             {
                 var writer = (IDataWriter)i;
-
                 while (writer.Write(GetNextStreamWriter(), _fileNumber)) { }
             }
 

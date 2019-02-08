@@ -1,6 +1,3 @@
-Temp*.*
-Test/TempFiles/*
-
 ### File below was from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 ## Ignore Visual Studio temporary files, build results, and
@@ -344,3 +341,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# SyncTK Ignores
+Temp*.*
+Test/TempFiles/*
+/Test/Properties/launchSettings.json
