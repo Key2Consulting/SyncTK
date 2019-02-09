@@ -345,4 +345,4 @@ healthchecksdb
 # SyncTK Ignores
 Temp*.*
 Test/TempFiles/*
-/Test/Properties/launchSettings.json
+/Packaging/Python/pysynctk.egg-info

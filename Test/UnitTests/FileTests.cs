@@ -9,7 +9,7 @@ namespace SyncTK.Test
         [Fact]
         public void TSVToTSVLocal()
         {
-            Sync
+            new Sync()
                 .From(new SourceFile($"{Cfg.SampleFilesRoot}\\*.txt"))
                 .WithFormat(new FormatTSV(true))
                 .ConvertTo(new ConvertTSV(true))
@@ -21,7 +21,7 @@ namespace SyncTK.Test
         [Fact]
         public void CSVToCSVLocalAsync()
         {
-            var t = Sync
+            var t = new Sync()
                 .From(new SourceFile($"{Cfg.SampleFilesRoot}\\*.txt"))
                 .WithFormat(new FormatTSV(true))
                 .ConvertTo(new ConvertTSV(true))

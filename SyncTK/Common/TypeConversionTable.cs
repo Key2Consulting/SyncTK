@@ -31,7 +31,7 @@ namespace SyncTK
                 };
 
                 // If column uses special type, strip off namespace prefix.
-                var dataTypeParts = map.SourceDataTypeName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                var dataTypeParts = map.SourceDataTypeName.Split('.');
                 map.SourceDataTypeName = dataTypeParts[dataTypeParts.Length - 1];
                 map.TargetDataTypeName = map.SourceDataTypeName;
 

@@ -33,7 +33,7 @@ namespace SyncTK
                 var parts = path.Split(Path.DirectorySeparatorChar);
                 string fileName = parts[parts.Length - 1];
                 parts[parts.Length - 1] = "";
-                var rootPath = string.Join(Path.DirectorySeparatorChar, parts);
+                var rootPath = string.Join(Path.DirectorySeparatorChar.ToString(), parts);
                    
                 // Verify the root path doesn't contain wildcards.
                 if (rootPath.Contains("*"))

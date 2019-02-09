@@ -7,11 +7,13 @@ namespace SyncTK.Test
 {
     public class Cfg
     {
+        static public string RootPath = Directory.GetCurrentDirectory();
+
         static public string SampleFilesRoot
         {
             get
             {
-                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\Test\SampleFiles"));
+                return Path.GetFullPath(Path.Combine(RootPath, @".\..\..\..\SampleFiles"));
             }
         }
 
@@ -19,7 +21,7 @@ namespace SyncTK.Test
         {
             get
             {
-                return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @".\..\Test\TempFiles"));
+                return Path.GetFullPath(Path.Combine(RootPath, @".\..\..\..\TempFiles"));
             }
         }
     }

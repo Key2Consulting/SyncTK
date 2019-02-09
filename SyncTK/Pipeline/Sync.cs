@@ -15,11 +15,10 @@ namespace SyncTK
         #endregion
 
         #region Client Builder Interface
-        public static Sync From(ISource connector)
+        public Sync From(ISource connector)
         {
-            var sync = new Sync();
-            sync._component.Add((Component)connector);
-            return sync;
+            _component.Add((Component)connector);
+            return this;
         }
 
         public Sync WithFormat(IFormatter reader)

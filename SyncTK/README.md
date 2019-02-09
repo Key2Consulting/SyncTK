@@ -6,3 +6,4 @@
  - WASB(s)
  - HDFS
  - Authentication & secure string
+ - CSV
