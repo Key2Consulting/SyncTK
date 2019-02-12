@@ -6,13 +6,18 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class ConvertTSV : Component
+    public class ConvertParquet : Component
     {
-        bool _header = false;
+        protected int _rowGroupMaxRecords = 0;
 
-        public ConvertTSV(bool header)
+        public ConvertParquet()
         {
-            _header = header;
+            _rowGroupMaxRecords = -1;
+        }
+
+        public ConvertParquet(int rowGroupMaxRecords = 1000000)
+        {
+            _rowGroupMaxRecords = rowGroupMaxRecords;
         }
 
         internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
@@ -21,7 +26,7 @@ namespace SyncTK
             {
                 var reader = (TypeConversionReader)i;
                 reader.SetTarget(this.GetType());
-                var writer = new TSVWriter(reader, _header);
+                var writer = new ParquetDataWriter(reader, _rowGroupMaxRecords);
                 yield return writer;
             }
         }

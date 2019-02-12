@@ -15,25 +15,25 @@ namespace SyncTK
         #endregion
 
         #region Client Builder Interface
-        public Sync From(ISource connector)
+        public Sync From(Component connector)
         {
             _component.Add((Component)connector);
             return this;
         }
 
-        public Sync WithFormat(IFormatter reader)
+        public Sync WithFormat(Component reader)
         {
             _component.Add((Component)reader);
             return this;
         }
 
-        public Sync ConvertTo(IConverter writer)
+        public Sync ConvertTo(Component writer)
         {
             _component.Add((Component)writer);
             return this;
         }
 
-        public Sync Into(ITarget connector)
+        public Sync Into(Component connector)
         {
             _component.Add((Component)connector);
             return this;
@@ -84,15 +84,6 @@ namespace SyncTK
                 this.Exec();
             });
         }
-
-        public string SerializeJSON()
-        {
-            return "";
-        }
-
-        public void DeserializeJSON(string JSON)
-        {
-        }
-        #endregion
+       #endregion
     }
 }

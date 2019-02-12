@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace SyncTK
 {
-    public class SourceFile : Component, ISource
+    public class SourceFile : Component
     {
         protected List<string> _paths = new List<string>();
         protected List<string> _rootPaths = new List<string>();
         protected List<string> _fileNames = new List<string>();
+        protected List<StreamReader> _streamReaders = new List<StreamReader>();
 
         public SourceFile(string path)
         {
@@ -64,8 +65,18 @@ namespace SyncTK
                 {
                     // Else, just a single file.
                     var reader = new StreamReader(_rootPaths[i] + Path.DirectorySeparatorChar + _fileNames[i]);
+                    _streamReaders.Add(reader);
                     yield return reader;
                 }
+            }
+        }
+
+        internal override void End(Sync pipeline, Component upstreamComponent)
+        {
+            foreach (var reader in _streamReaders)
+            {
+                reader.Close();
+                reader.Dispose();
             }
         }
     }

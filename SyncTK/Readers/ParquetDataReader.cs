@@ -3,44 +3,36 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
+using Parquet;
 
 namespace SyncTK
 {
-    internal class TSVReader : System.Data.IDataReader
+    internal class ParquetDataReader : IDataReader
     {
-        protected const string _delimeter = "\t";
-        protected string[] _splitDelimeter;
-        protected bool _header;
         protected System.Collections.ArrayList _columnName;
-        protected System.Collections.ArrayList _readBuffer;
         protected StreamReader _reader;
         protected int _readCount = 0;
-        protected string _firstLine = "";
+        
+        // Parquet.NET specific properties
+        protected Parquet.ParquetReader _pqReader;
+        protected Parquet.Data.DataField[] _pqDataFields;
+        protected Parquet.Data.DataColumn[] _pqDataColumn;
+        protected int _rowGroupIndex = 0;
+        protected int _rowGroupReadCount = 0;
 
-        public TSVReader(System.IO.StreamReader reader, bool header)
+        public ParquetDataReader(StreamReader reader)
         {
             _reader = reader;
-            _header = header;
-            _splitDelimeter = new string[] { _delimeter };
 
-            // Even if no header is set, we still need to know how many columns there are.
-            _firstLine = _reader.ReadLine();
-            var columns = _firstLine.Split(_splitDelimeter, StringSplitOptions.None);
-            _columnName = new System.Collections.ArrayList(columns.Length);
-            _readBuffer = new System.Collections.ArrayList(columns.Length);           // preallocate once and only once for performance
+            // Use Parquet.NET to do the heavy reading.
+            _pqReader = new Parquet.ParquetReader(reader.BaseStream);
+            _pqDataFields = _pqReader.Schema.GetDataFields();
 
-            // Foreach of the extract columns from the first row
-            for (var i = 0; i < columns.Length; i++)
+            // Extract the column names from the parquet file in a separate array for fast lookups.
+            _columnName = new System.Collections.ArrayList();
+            for (int i = 0; i < _pqDataFields.Length; i++)
             {
-                _columnName.Add(columns[i]);
-                _readBuffer.Add(null);
-
-                // If we don't have a header, use the column number as the name
-                if (!_header)
-                {
-                    _columnName[i] = i.ToString();
-                }
+                _columnName.Add(_pqDataFields[i].Name);
             }
         }
 
@@ -48,7 +40,7 @@ namespace SyncTK
         {
             get
             {
-                return _readBuffer[i];
+                return _pqDataColumn[i].Data.GetValue(_rowGroupReadCount);
             }
         }
 
@@ -56,7 +48,7 @@ namespace SyncTK
         {
             get
             {
-                return _readBuffer[_columnName.IndexOf(name)];
+                return _pqDataColumn[_columnName.IndexOf(name)].Data.GetValue(_rowGroupReadCount);
             }
         }
 
@@ -134,9 +126,7 @@ namespace SyncTK
 
         public string GetDataTypeName(int i)
         {
-            // We only support string types, which will get converted to VARCHAR (MAX) or similar type depending on the 
-            // target platform. That's up to the importer to determine.
-            return "string";
+            return _pqDataFields[i].DataType.ToString();
         }
 
         public DateTime GetDateTime(int i)
@@ -196,12 +186,12 @@ namespace SyncTK
 
         public string GetString(int i)
         {
-            return (string)_readBuffer[i];
+            return (string)this[i];
         }
 
         public object GetValue(int i)
         {
-            return _readBuffer[i];
+            return this[i];
         }
 
         public int GetValues(object[] values)
@@ -211,7 +201,7 @@ namespace SyncTK
 
         public bool IsDBNull(int i)
         {
-            return (_readBuffer[i] == null);
+            return (this[i] == null);
         }
 
         public bool NextResult()
@@ -221,50 +211,31 @@ namespace SyncTK
 
         public bool Read()
         {
-            // Read the next line from the input stream. If the first line, we've already read it earlier during initialization
-            // unless it was the header
-            _readCount++;
-            string line = "";
-            if (_readCount > 1 || _header)
+            // If we still have rows left to read within the current rowgroup.
+            if (_pqDataColumn != null && _rowGroupReadCount < _pqDataColumn.Length)
             {
-                line = _reader.ReadLine();
+                _readCount++;
+                _rowGroupReadCount++;
+                return true;
+            }
+            else if (_rowGroupIndex < _pqReader.RowGroupCount)
+            {
+                // If we have rowgroups left to read from the overall file.
+                _pqDataColumn = _pqReader.ReadEntireRowGroup(_rowGroupIndex++);
+                _rowGroupReadCount = 0;
+                return true;
             }
             else
             {
-                line = _firstLine;
-            }
-
-            try
-            {
-                // If no data was read, we must be at the end of the file.
-                if (line == null || line.Trim().Length == 0)
-                {
-                    _reader.Close();
-                    return false;
-                }
-
-                // Use simple delimeter parsing (i.e. Split) with TSV.
-                var columns = line.Split(_splitDelimeter, StringSplitOptions.None);
-
-                // If first record, initialize. Must initialize within our read logic since we're streaming and
-                // we need to gather some basic information about the data such as column count.
-
-                // Foreach of the extract columns
-                for (var i = 0; i < columns.Length; i++)
-                {
-                    _readBuffer[i] = columns[i];
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error in TSVReader reading line {_readCount}.", ex);
+                // Otherwise, we're done.
+                return false;
             }
         }
 
         public DataTable GetSchemaTable()
         {
+            // TODO
+
             // Even though we only support the string data type, we must generate a SchemaTable
             // to adhere to the IDataReader standard (and required by importers).
             DataTable dt = new DataTable();
@@ -282,17 +253,57 @@ namespace SyncTK
             // For each column in the input text file
             for (int i = 0; i < _columnName.Count; i++)
             {
+                // Default data type properties directly from parquet file.
+                Type dataType = null;
+                int precision = -1;
+                int scale = -1;
+                int columnSize = -1;
+
+                // Try to extract additional details about the type.
+                switch (_pqDataFields[i].DataType.ToString().ToUpper())
+                {
+                    case ("DATETIMEOFFSET"):
+                        dataType = typeof(DateTimeOffset);
+                        columnSize = 10;        // SQL Server uses 10 bytes for DATETIMEOFFSET
+                        break;
+
+                    case ("DECIMALDATAFIELD"):
+                        var decimalField = (Parquet.Data.DecimalDataField)_pqDataFields[i];
+                        dataType = typeof(decimal);
+                        columnSize = sizeof(decimal);
+                        precision = decimalField.Precision;
+                        scale = decimalField.Scale;
+                        break;
+
+                    case ("STRING"):
+                        dataType = typeof(String);
+                        columnSize = -1;        // unlimited
+                        break;
+
+                    case ("INT32"):
+                        dataType = typeof(Int32);
+                        columnSize = sizeof(Int32);
+                        break;
+
+                    case ("BOOLEAN"):
+                        dataType = typeof(bool);
+                        columnSize = sizeof(bool);
+                        break;
+
+                    default:
+                        throw new Exception($"Unknown Parquet type {_pqDataFields[i].DataType.ToString()}");
+                }
+
                 // Add a row describing that column's schema.
                 DataRow textCol = dt.NewRow();
-                textCol["ColumnName"] = _columnName[i];
+                textCol["ColumnName"] = _pqDataFields[i].Name;
                 textCol["ColumnOrdinal"] = i;
-                textCol["ColumnSize"] = -1;
-                textCol["DataType"] = typeof(System.String);
-                textCol["DataTypeName"] = "string";
-                textCol["AllowDBNull"] = true;
-                textCol["NumericPrecision"] = null;
-                textCol["NumericScale"] = null;
-                textCol["UdtAssemblyQualifiedName"] = "PowerSync.TextFileDataReader.String";
+                textCol["ColumnSize"] = columnSize;
+                textCol["DataType"] = dataType;
+                textCol["DataTypeName"] = dataType.GetType().Name;
+                textCol["AllowDBNull"] = _pqDataFields[i].HasNulls;
+                textCol["NumericPrecision"] = precision;
+                textCol["NumericScale"] = scale;
                 dt.Rows.Add(textCol);
             }
 

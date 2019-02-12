@@ -2,18 +2,18 @@ using SyncTK;
 using System;
 using Xunit;
 
-namespace SyncTK.Test
+namespace SyncTK.Test.UnitTests
 {
-    public class FileTests
+    public class FileTests : TestBase
     {
         [Fact]
         public void TSVToTSVLocal()
         {
             new Sync()
-                .From(new SourceFile($"{Cfg.SampleFilesRoot}\\*.txt"))
+                .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\*.txt"))
                 .WithFormat(new FormatTSV(true))
                 .ConvertTo(new ConvertTSV(true))
-                .Into(new TargetFile($"{Cfg.TempFilesRoot}\\Test1_*.txt"))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVToTSVLocal_*.txt"))
                 .Exec();
 
         }
@@ -22,10 +22,10 @@ namespace SyncTK.Test
         public void CSVToCSVLocalAsync()
         {
             var t = new Sync()
-                .From(new SourceFile($"{Cfg.SampleFilesRoot}\\*.txt"))
+                .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\*.txt"))
                 .WithFormat(new FormatTSV(true))
                 .ConvertTo(new ConvertTSV(true))
-                .Into(new TargetFile($"{Cfg.TempFilesRoot}\\Test1_*.txt"))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\CSVToCSVLocalAsync_*.txt"))
                 .ExecAsync();
 
             t.Start();

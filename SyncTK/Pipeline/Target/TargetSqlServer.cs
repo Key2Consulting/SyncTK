@@ -8,11 +8,20 @@ using System.Threading.Tasks;
 
 namespace SyncTK
 {
-    public class TargetSqlServer : ConnectorSqlServer, ITarget
+    public class TargetSqlServer : ConnectorSqlServer
     {
         protected int _batchSize = 50000;       // intelligently set this based on environment & configuration?
         protected bool _create;
         protected bool _overwrite;
+
+        public TargetSqlServer(string connectionString, string schema, string table, bool create = true, bool overwrite = false, int _timeout = 3600)
+        {
+            _connectionString = connectionString;
+            _schema = schema;
+            _table = table;
+            _create = create;
+            _overwrite = overwrite;
+        }
 
         public TargetSqlServer(string server, string database, string schema, string table, bool create = true, bool overwrite = false, int _timeout = 3600)
         {
@@ -26,7 +35,7 @@ namespace SyncTK
 
         internal override void Validate(Sync pipeline, Component upstreamComponent)
         {
-            Assert(!(upstreamComponent is IConverter), "Cannot use converters with this target.");
+            Assert(!(upstreamComponent.GetType().Name.Contains("Convert")), "Cannot use converters with this target.");
         }
 
         internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
@@ -35,7 +44,7 @@ namespace SyncTK
 
             try
             {
-                conn = new SqlConnection($"Server={_server};Integrated Security=true;Database={_database}");
+                conn = new SqlConnection(GetConnectionString());
                 _connections.Add(conn);
                 conn.Open();
 

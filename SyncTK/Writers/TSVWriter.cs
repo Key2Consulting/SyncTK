@@ -21,33 +21,27 @@ namespace SyncTK
             _header = header;
         }
 
-        public bool Write(StreamWriter writer, int fileNumber)
+        public bool Write(StreamWriter writer, int fileReadNumber, int fileWriteNumber)
         {
             try
             {
                 // Write the header if specified and whenever we start writing a new file.
-                if (_header && _previousFileNumber != fileNumber)
+                if (_header && _previousFileNumber != fileWriteNumber)
                 {
-                    // We may think we're writing to a new file, but really the pipeline chose to have
-                    // us (a new TSVWriter instance) output to an existing stream. In which case, we don't
-                    // write the header.
-                    if (writer.BaseStream.Position == 0)
+                    _previousFileNumber = fileWriteNumber;
+                    // For each column
+                    for (int i = 0; i < _reader.FieldCount; i++)
                     {
-                        _previousFileNumber = fileNumber;
-                        // For each column
-                        for (int i = 0; i < _reader.FieldCount; i++)
+                        // If not the first column, write the delimeter
+                        if (i > 0)
                         {
-                            // If not the first column, write the delimeter
-                            if (i > 0)
-                            {
-                                writer.Write(_delimeter);
-                            }
-                            writer.Write(_reader.GetName(i));
+                            writer.Write(_delimeter);
                         }
-
-                        // Next line
-                        writer.Write(_newline);
+                        writer.Write(_reader.GetName(i));
                     }
+
+                    // Next line
+                    writer.Write(_newline);
                 }
 
                 // For each data row

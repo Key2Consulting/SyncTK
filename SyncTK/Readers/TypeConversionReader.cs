@@ -46,7 +46,7 @@ namespace SyncTK
         {
             get
             {
-                return this._reader[i];
+                return _reader[i];
             }
         }
 
@@ -54,7 +54,7 @@ namespace SyncTK
         {
             get
             {
-                return this._reader[name];
+                return _reader[name];
             }
         }
 
@@ -62,7 +62,7 @@ namespace SyncTK
         {
             get
             {
-                return this._reader.Depth;
+                return _reader.Depth;
             }
         }
 
@@ -70,7 +70,7 @@ namespace SyncTK
         {
             get
             {
-                return this._reader.IsClosed;
+                return _reader.IsClosed;
             }
         }
 
@@ -78,7 +78,7 @@ namespace SyncTK
         {
             get
             {
-                return this._reader.RecordsAffected;
+                return _reader.RecordsAffected;
             }
         }
 
@@ -86,125 +86,125 @@ namespace SyncTK
         {
             get
             {
-                return this._reader.FieldCount;
+                return _reader.FieldCount;
             }
         }
 
         public void Close()
         {
-            this._reader.Close();
+            _reader.Close();
         }
 
         public void Dispose()
         {
-            this._reader.Dispose();
+            _reader.Dispose();
         }
 
         public bool GetBoolean(int i)
         {
-            return this._reader.GetBoolean(i);
+            return _reader.GetBoolean(i);
         }
 
         public byte GetByte(int i)
         {
-            return this._reader.GetByte(i);
+            return _reader.GetByte(i);
         }
 
         public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
         {
-            return this._reader.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
+            return _reader.GetBytes(i, fieldOffset, buffer, bufferoffset, length);
         }
 
         public char GetChar(int i)
         {
-            return this._reader.GetChar(i);
+            return _reader.GetChar(i);
         }
 
         public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
         {
-            return this._reader.GetChars(i, fieldoffset, buffer, bufferoffset, length);
+            return _reader.GetChars(i, fieldoffset, buffer, bufferoffset, length);
         }
 
         public IDataReader GetData(int i)
         {
-            return this._reader.GetData(i);
+            return _reader.GetData(i);
         }
 
         public string GetDataTypeName(int i)
         {
-            return this._reader.GetDataTypeName(i);
+            return _reader.GetDataTypeName(i);
         }
 
         public DateTime GetDateTime(int i)
         {
-            return this._reader.GetDateTime(i);
+            return _reader.GetDateTime(i);
         }
 
         public decimal GetDecimal(int i)
         {
-            return this._reader.GetDecimal(i);
+            return _reader.GetDecimal(i);
         }
 
         public double GetDouble(int i)
         {
-            return this._reader.GetDouble(i);
+            return _reader.GetDouble(i);
         }
 
         public Type GetFieldType(int i)
         {
-            return this._reader.GetFieldType(i);
+            return _reader.GetFieldType(i);
         }
 
         public float GetFloat(int i)
         {
-            return this._reader.GetFloat(i);
+            return _reader.GetFloat(i);
         }
 
         public Guid GetGuid(int i)
         {
-            return this._reader.GetGuid(i);
+            return _reader.GetGuid(i);
         }
 
         public short GetInt16(int i)
         {
-            return this._reader.GetInt16(i);
+            return _reader.GetInt16(i);
         }
 
         public int GetInt32(int i)
         {
-            return this._reader.GetInt32(i);
+            return _reader.GetInt32(i);
         }
 
         public long GetInt64(int i)
         {
-            return this._reader.GetInt64(i);
+            return _reader.GetInt64(i);
         }
 
         public string GetName(int i)
         {
-            return this._reader.GetName(i);
+            return _reader.GetName(i);
         }
 
         public int GetOrdinal(string name)
         {
-            return this._reader.GetOrdinal(name);
+            return _reader.GetOrdinal(name);
         }
 
         public DataTable GetSchemaTable()
         {
             // For whatever reason, we haven't needed to pass our converted schema table. Perhaps byte streaming is enough.
             // return _schemaTable;
-            return this._reader.GetSchemaTable();
+            return _reader.GetSchemaTable();
         }
 
         public string GetString(int i)
         {
-            return this._reader.GetString(i);
+            return _reader.GetString(i);
         }
 
         public object GetValue(int i)
         {
-            if (this._transportAsBinary[i])
+            if (_transportAsBinary[i])
             {
                 // Console.WriteLine("Transporting binary for col{0}", i);
                 var size = this.GetBytes(i, 0, null, 0, 0);
@@ -214,28 +214,31 @@ namespace SyncTK
             }
             else
             {
-                return this._reader.GetValue(i);
+                if (_reader.IsDBNull(i))
+                    return null;
+                else
+                    return _reader.GetValue(i);
             }
         }
 
         public int GetValues(object[] values)
         {
-            return this._reader.GetValues(values);
+            return _reader.GetValues(values);
         }
 
         public bool IsDBNull(int i)
         {
-            return this._reader.IsDBNull(i);
+            return _reader.IsDBNull(i);
         }
 
         public bool NextResult()
         {
-            return this._reader.NextResult();
+            return _reader.NextResult();
         }
 
         public bool Read()
         {
-            return this._reader.Read();
+            return _reader.Read();
         }
     }
 }

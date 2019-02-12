@@ -2,9 +2,9 @@ using SyncTK;
 using System;
 using Xunit;
 
-namespace SyncTK.Test
+namespace SyncTK.Test.UnitTests
 {
-    public class SqlServerTests
+    public class SqlServerTests : TestBase
     {
         [Fact]
         public void DBToTSVLocal()
@@ -12,7 +12,7 @@ namespace SyncTK.Test
             new Sync()
                 .From(new SourceSqlServer(@"(LocalDb)\MSSQLLocalDB", "SyncTK", "sys", "objects"))
                 .ConvertTo(new ConvertTSV(true))
-                .Into(new TargetFile($"{Cfg.TempFilesRoot}\\Test1_*.txt"))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\DBToTSVLocal_*.txt"))
                 .Exec();
         }
 
@@ -20,7 +20,7 @@ namespace SyncTK.Test
         public void TSVToDB()
         {
             new Sync()
-                .From(new SourceFile($"{Cfg.SampleFilesRoot}\\Sample10000.txt"))
+                .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\Sample10000.txt"))
                 .WithFormat(new FormatTSV(true))
                 .Into(new TargetSqlServer(@"(LocalDb)\MSSQLLocalDB", "SyncTK", "dbo", "TSVToDB", true))
                 .Exec();
@@ -50,6 +50,16 @@ namespace SyncTK.Test
             new Sync()
                 .From(new SourceSqlServer(@"(LocalDb)\MSSQLLocalDB", "SyncTK", "SELECT TOP 1000000 t.* FROM sys.objects t CROSS APPLY sys.objects a CROSS APPLY sys.objects b CROSS APPLY sys.objects c"))
                 .Into(new TargetSqlServer(@"(LocalDb)\MSSQLLocalDB", "SyncTK", "dbo", "DBToDBLargeTable", true))
+                .Exec();
+        }
+
+        [Fact]
+        public void DBToParquetLarge()
+        {
+            new Sync()
+                .From(new SourceSqlServer(@"(LocalDb)\MSSQLLocalDB", "SyncTK", "SELECT TOP 1000000 t.* FROM sys.objects t CROSS APPLY sys.objects a CROSS APPLY sys.objects b CROSS APPLY sys.objects c"))
+                .ConvertTo(new ConvertParquet())
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\DBToParquetLarge_*.parquet"))
                 .Exec();
         }
     }

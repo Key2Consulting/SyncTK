@@ -18,15 +18,15 @@ namespace SyncTK.Test
             // Test Execution
             var runner = new Runner();
             string[] tests = {
-                "SyncTK.Test.FileTests",
-                "SyncTK.Test.SqlServerTests"
+                "SyncTK.Test.UnitTests.FileTests",
+                "SyncTK.Test.UnitTests.SqlServerTests",
+                "SyncTK.Test.UnitTests.AzureTests"
             };
-
             var r = runner.Run(tests);
 
             // Force a keypress to allow viewing of results.
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("Test Complete");
+            Console.WriteLine("Test Complete (press any key).");
             Console.ReadKey();
 
             // Global Teardown
@@ -38,7 +38,8 @@ namespace SyncTK.Test
         static void GlobalSetup()
         {
             // Cleanup Temp Files from Last Run
-            System.IO.DirectoryInfo di = new DirectoryInfo(Cfg.TempFilesRoot);
+            var cfg = new SyncTK.Test.UnitTests.TestBase();
+            System.IO.DirectoryInfo di = new DirectoryInfo(cfg.GetConfig("TempFilesRoot"));
             foreach (FileInfo file in di.GetFiles())
             {
                 file.Delete();

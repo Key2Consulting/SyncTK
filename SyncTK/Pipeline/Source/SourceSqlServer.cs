@@ -7,8 +7,16 @@ using SyncTK;
 
 namespace SyncTK
 {
-    public class SourceSqlServer : ConnectorSqlServer, ISource
+    public class SourceSqlServer : ConnectorSqlServer
     {
+        public SourceSqlServer(string connectionString, string schema, string table, int timeout = 3600)
+        {
+            _connectionString = connectionString;
+            _schema = schema;
+            _table = table;
+            _timeout = timeout;
+            _query = $"SELECT * FROM [{schema}].[{table}]";
+        }
 
         public SourceSqlServer(string server, string database, string schema, string table, int timeout = 3600)
         {
@@ -33,7 +41,7 @@ namespace SyncTK
 
             try
             {
-                conn = new SqlConnection($"Server={_server};Integrated Security=true;Database={_database}");
+                conn = new SqlConnection(GetConnectionString());
                 _connections.Add(conn);
                 conn.Open();
                 var cmd = conn.CreateCommand();

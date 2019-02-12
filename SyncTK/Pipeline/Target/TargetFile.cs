@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace SyncTK
 {
-    public class TargetFile : ConnectorFile, ITarget
+    public class TargetFile : ConnectorFile
     {
         protected string _path = "";
         protected int _fileRowLimit = 0;
-        protected int _fileNumber = 0;
+        protected int _fileReadNumber = 0;
+        protected int _fileWriteNumber = 0;
         protected int _rowCounter = 0;
         protected StreamWriter _streamWriter = null;
 
@@ -36,7 +37,8 @@ namespace SyncTK
             foreach (var i in input)
             {
                 var writer = (IDataWriter)i;
-                while (writer.Write(GetNextStreamWriter(), _fileNumber)) { }
+                while (writer.Write(GetNextStreamWriter(), _fileReadNumber, _fileWriteNumber)) { }
+                _fileReadNumber++;
             }
 
             // Targets don't produce output during processing.
@@ -68,8 +70,8 @@ namespace SyncTK
                     _streamWriter.Close();
                     _streamWriter.Dispose();
                 }
-                _fileNumber++;
-                _streamWriter = new StreamWriter(_path.Replace("*", this.GetCurrentTimeStampToken() + _fileNumber.ToString()));
+                _fileWriteNumber++;
+                _streamWriter = new StreamWriter(_path.Replace("*", this.GetCurrentTimeStampToken() + _fileWriteNumber.ToString()));
             }
 
             return _streamWriter;

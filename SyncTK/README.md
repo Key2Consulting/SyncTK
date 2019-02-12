@@ -1,9 +1,9 @@
 ﻿# TODO
- - REST source/target
- - Command option for source/target
- - Log output
- - Memory source/target
- - WASB(s)
- - HDFS
- - Authentication & secure string
- - CSV
+- WASB(s)
+- Log output
+- Command option for source/target
+- CSV
+- REST source/target
+- Memory source/target
+- HDFS
+- Authentication & secure string

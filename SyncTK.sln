@@ -9,6 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Python", "Packaging\Python\Python.pyproj", "{9E2C0D32-5536-4709-B0DE-B4DCD3E8C19C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{48F73792-14EF-405D-A935-879344563FA0}"
+	ProjectSection(SolutionItems) = preProject
+		Packaging\Packaging.md = Packaging\Packaging.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

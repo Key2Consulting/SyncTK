@@ -7,15 +7,8 @@ namespace SyncTK
 {
     public abstract class Component
     {
-        protected string _name = null;
-
         public Component()
         {
-        }
-
-        public Component(string name)
-        {
-            _name = name;
         }
 
         internal virtual void Begin(Sync pipeline, Component upstreamComponent)

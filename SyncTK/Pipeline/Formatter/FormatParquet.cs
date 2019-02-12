@@ -5,13 +5,10 @@ using System.Text;
 
 namespace SyncTK
 {
-    public class FormatTSV : Component
+    public class FormatParquet: Component
     {
-        bool _header = false;
-
-        public FormatTSV(bool header)
+        public FormatParquet()
         {
-            _header = header;
         }
 
         internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
@@ -19,7 +16,7 @@ namespace SyncTK
             foreach (var i in input)
             {
                 var stream = (StreamReader)i;
-                var reader = new TypeConversionReader(new TSVDataReader(stream, _header), this.GetType());
+                var reader = new TypeConversionReader(new ParquetDataReader(stream), this.GetType());
                 
                 yield return reader;
             }

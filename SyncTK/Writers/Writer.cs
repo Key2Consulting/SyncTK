@@ -7,6 +7,6 @@ namespace SyncTK
 {
     internal interface IDataWriter
     {
-        bool Write(StreamWriter writer, int fileNumber);
+        bool Write(StreamWriter writer, int fileReadNumber, int fileWriteNumber);
     }
 }
