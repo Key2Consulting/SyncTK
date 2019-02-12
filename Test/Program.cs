@@ -47,8 +47,11 @@ namespace SyncTK.Test
             
             // Setup SQL Server Test Database
             string sql = @"
-                ALTER DATABASE [SyncTK] SET SINGLE_USER WITH ROLLBACK IMMEDIATE
-                DROP DATABASE IF EXISTS [SyncTK]
+                IF EXISTS(SELECT * FROM sys.databases WHERE [name] = 'SyncTK')
+                BEGIN
+                    EXEC sp_executesql N'ALTER DATABASE [SyncTK] SET SINGLE_USER WITH ROLLBACK IMMEDIATE'
+                    EXEC sp_executesql N'DROP DATABASE [SyncTK]'
+                END
                 CREATE DATABASE [SyncTK]
                 
                 CREATE TABLE [SyncTK].[dbo].[OddTypes](

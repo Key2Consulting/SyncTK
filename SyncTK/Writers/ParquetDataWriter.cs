@@ -38,7 +38,10 @@ namespace SyncTK
 
                 // Add the Parquet data field.
                 if (dataType == typeof(DateTime))
+                {
+                    _dataTypes[i] = typeof(DateTimeOffset);
                     _pqDataFields.Add(new Parquet.Data.DateTimeDataField(columnName, Parquet.Data.DateTimeFormat.DateAndTime));      // force to use DateTime instead of DateTimeOffset for date types
+                }
                 else
                     _pqDataFields.Add(new Parquet.Data.DataField(columnName, (Type)dataType));      // let Parquet.NET handle conversion
             }
@@ -116,8 +119,11 @@ namespace SyncTK
             for (int i = 0; i < _reader.FieldCount; i++)
             {
                 var val = _reader.GetValue(i);
+                if (val is DateTime)
+                    val = new DateTimeOffset((DateTime)val);
+
                 if (val != null)
-                    _buffer[i].Add(Convert.ChangeType(_reader.GetValue(i), _dataTypes[i]));
+                    _buffer[i].Add(Convert.ChangeType(val, _dataTypes[i]));
             }
 
             return true;

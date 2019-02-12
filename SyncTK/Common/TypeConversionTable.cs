@@ -57,10 +57,20 @@ namespace SyncTK
                     }
                 }
 
-                // If a special type, force conversion compatible between different database platforms.
-                //
+                // Sql Server Target
+                if (target == typeof(TargetSqlServer))
+                {
+                    switch (map.SourceDataTypeName)
+                    {
+                        case "STRING":
+                            map.TargetDataTypeName = "NVARCHAR";
+                            map.TargetColumnSize = -1;
+                            break;
+                    }
+                }
 
-                // If a special type, must transport as binary.
+                // If a special type, force conversion compatible between different platforms.
+                //
                 switch (map.SourceDataTypeName)
                 {
                     case "GEOGRAPHY":
