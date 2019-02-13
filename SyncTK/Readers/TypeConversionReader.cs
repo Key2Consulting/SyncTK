@@ -7,39 +7,18 @@ using System.Data.SqlClient;
 namespace SyncTK
 {
     /// <summary>
-    /// A wrapper around another DataReader that provides type conversion between source and target. Without this 
-    /// wrapper class, certain runtime types (e.g. Sql Geography) would cause type errors. For most of those
-    /// cases, simply retrieving the data as a binary byte stream addresses the issue. Must preserve special type
-    /// when target is same as source.
+    /// A simple wrapper around another DataReader that provides type conversion according to a provided TypeConversionTable.
+    /// All conversions are delegated to the TypeConversionTable.Convert method.
     /// </summary>
     internal class TypeConversionReader : System.Data.IDataReader
     {
-        IDataReader _reader = null;
-        Type _source = null;
-        Type _target = null;
-        public TypeConversionTable ConversionTable;
-        bool[] _transportAsBinary;               // if true, the given column requires byte streaming
+        protected IDataReader _reader = null;
+        protected TypeConversionTable _typeConversionTable;
 
-        public TypeConversionReader(IDataReader reader, Type source)
+        public TypeConversionReader(IDataReader reader, TypeConversionTable typeConversionTable)
         {
             _reader = reader;
-            _source = source;
-        }
-        
-        public void SetTarget(Type target)
-        {
-            _target = target;
-
-            // Certain columns require special processing and type conversions. Inspect the schema table to determine
-            // which columns require which processing, and build highly optimized lookups to perform this conversion
-            // during read operations.
-            ConversionTable = new TypeConversionTable(_source, _target, _reader.GetSchemaTable());
-
-            _transportAsBinary = new bool[this.FieldCount];
-            for (int i = 0; i < this.FieldCount; i++)
-            {
-                _transportAsBinary[i] = ConversionTable[i].TransportAsBinary;
-            }
+            _typeConversionTable = typeConversionTable;
         }
 
         public object this[int i]
@@ -192,8 +171,6 @@ namespace SyncTK
 
         public DataTable GetSchemaTable()
         {
-            // For whatever reason, we haven't needed to pass our converted schema table. Perhaps byte streaming is enough.
-            // return _schemaTable;
             return _reader.GetSchemaTable();
         }
 
@@ -204,21 +181,9 @@ namespace SyncTK
 
         public object GetValue(int i)
         {
-            if (_transportAsBinary[i])
-            {
-                // Console.WriteLine("Transporting binary for col{0}", i);
-                var size = this.GetBytes(i, 0, null, 0, 0);
-                var buffer = new byte[size];
-                this.GetBytes(i, 0, buffer, 0, (int)size);
-                return buffer;
-            }
-            else
-            {
-                if (_reader.IsDBNull(i))
-                    return null;
-                else
-                    return _reader.GetValue(i);
-            }
+            // GetValue is called by SqlBulkCopy and where the real work takes place. Based on the 
+            // TypeConversionMap, will return the appropriate type.
+            return _typeConversionTable.ConvertValue(_reader, i);
         }
 
         public int GetValues(object[] values)

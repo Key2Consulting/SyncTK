@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    internal class TSVWriter : IDataWriter
+    internal class TSVWriter : IFileWriter
     {
         protected const string _delimeter = "\t";
         protected bool _header;

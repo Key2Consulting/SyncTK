@@ -26,8 +26,12 @@ namespace SyncTK.Test
 
             // Force a keypress to allow viewing of results.
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("Test Complete (press any key).");
-            Console.ReadKey();
+            Console.WriteLine("Test Complete.");
+
+            if (r != 0)
+                Console.ReadKey();
+            else
+                System.Threading.Thread.Sleep(1500);
 
             // Global Teardown
             GlobalTearDown();

@@ -16,7 +16,7 @@ namespace SyncTK
             foreach (var i in input)
             {
                 var stream = (StreamReader)i;
-                var reader = new TypeConversionReader(new ParquetDataReader(stream), this.GetType());
+                var reader = new ParquetDataReader(stream);
                 
                 yield return reader;
             }

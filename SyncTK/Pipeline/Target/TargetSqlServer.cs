@@ -10,20 +10,21 @@ namespace SyncTK
 {
     public class TargetSqlServer : ConnectorSqlServer
     {
-        protected int _batchSize = 50000;       // intelligently set this based on environment & configuration?
+        protected int _batchSize = 0;       // intelligently set this based on environment & configuration?
         protected bool _create;
         protected bool _overwrite;
 
-        public TargetSqlServer(string connectionString, string schema, string table, bool create = true, bool overwrite = false, int _timeout = 3600)
+        public TargetSqlServer(string connectionString, string schema, string table, bool create = true, bool overwrite = false, int timeout = 3600, int batchSize = 10000)
         {
             _connectionString = connectionString;
             _schema = schema;
             _table = table;
             _create = create;
             _overwrite = overwrite;
+            _batchSize = batchSize;
         }
 
-        public TargetSqlServer(string server, string database, string schema, string table, bool create = true, bool overwrite = false, int _timeout = 3600)
+        public TargetSqlServer(string server, string database, string schema, string table, bool create = true, bool overwrite = false, int timeout = 3600, int batchSize = 10000)
         {
             _server = server;
             _database = database;
@@ -31,6 +32,7 @@ namespace SyncTK
             _table = table;
             _create = create;
             _overwrite = overwrite;
+            _batchSize = batchSize;
         }
 
         internal override void Validate(Sync pipeline, Component upstreamComponent)
@@ -48,36 +50,11 @@ namespace SyncTK
                 _connections.Add(conn);
                 conn.Open();
 
-                // Import data from all input readers asynchronously.
-                var blk = new SqlBulkCopy(conn.ConnectionString, SqlBulkCopyOptions.TableLock)
-                {
-                    DestinationTableName = $"[{_schema}].[{_table}]",
-                    BulkCopyTimeout = _timeout,
-                    BatchSize = _batchSize
-                };
-
-                bool initialized = false;
-                var blkTasks = new List<Task>();
+                var writer = new SqlServerDataWriter(conn, _schema, _table, _create, _overwrite, _timeout, _batchSize);
                 foreach (var i in input)
                 {
-                    var reader = (TypeConversionReader)i;
-
-                    // Initialize on first enumeration.
-                    if (!initialized)
-                    {
-                        initialized = true;
-
-                        // Configure type conversion reader with target information.
-                        reader.SetTarget(this.GetType());
-
-                        // If create flag is set, run the create script.
-                        if (_create)
-                        {
-                            this.CreateTargetTable(conn, reader.ConversionTable, _schema, _table, _overwrite);
-                        }
-                    }
-
-                    blk.WriteToServer(reader);
+                    var reader = (IDataReader)i;
+                    writer.Write(reader);
                 }
 
                 // Targets don't produce output during processing.

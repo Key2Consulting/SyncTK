@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    internal interface IDataWriter
+    internal interface IFileWriter
     {
         bool Write(StreamWriter writer, int fileReadNumber, int fileWriteNumber);
     }

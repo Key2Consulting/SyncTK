@@ -8,7 +8,7 @@ using System.Collections;
 
 namespace SyncTK
 {
-    internal class ParquetDataWriter : IDataWriter
+    internal class ParquetDataWriter : IFileWriter
     {
         protected IDataReader _reader;
         protected int _writeCount = 0;
@@ -21,10 +21,13 @@ namespace SyncTK
         protected int _rowGroupWriteCount = 0;
         protected int _rowGroupMaxRecords = 0;
         protected Parquet.ParquetWriter _pqWriter;
+        protected TypeConversionTable _typeConversionTable;
 
         public ParquetDataWriter(IDataReader reader, int rowGroupMaxRecords = -1)
         {
             _reader = reader;
+
+            CreateTypeConversionTable(reader);
 
             // Configure column schema information.
             var schemaTable = _reader.GetSchemaTable();
@@ -64,6 +67,44 @@ namespace SyncTK
             }
         }
 
+        protected void CreateTypeConversionTable(IDataReader reader)
+        {
+            _typeConversionTable = new TypeConversionTable(reader.GetSchemaTable());
+
+            foreach (var map in _typeConversionTable)
+            {
+                var x = map;
+                // A variable length type with a size greater than 8K becomes MAX in SQL Server.
+                if (map.SourceDataTypeName == "DATETIME")
+                {
+                    map.TargetDataType = typeof(DateTimeOffset);
+                    map.TargetDataTypeName = "DateTimeOffset";
+                }
+
+            //    // .NET strings convert to NVARCHAR(MAX)
+            //    if (map.SourceDataTypeName == "STRING")
+            //    {
+            //        map.TargetDataTypeName = "NVARCHAR";
+            //        map.TargetColumnSize = -1;
+            //    }
+
+            //    // SQL Server special types (Geography, Geometry) require special assembly. However, if these are
+            //    // converted to BINARY the assembly isn't required and SQL will convert in target.
+            //    switch (map.SourceDataTypeName)
+            //    {
+            //        case "GEOGRAPHY":
+            //            map.TransportAsBinary = true;
+            //            break;
+            //        case "GEOMETRY":
+            //            map.TransportAsBinary = true;
+            //            break;
+            //        case "HIERARCHYID":
+            //            map.TransportAsBinary = true;
+            //            break;
+            //    }
+            }
+        }
+
         public bool Write(StreamWriter writer, int fileReadNumber, int fileWriteNumber)
         {
             // Roll to a new parquet file on FileWriteNumber increment.
@@ -85,7 +126,7 @@ namespace SyncTK
                 for (int i = 0; i < _reader.FieldCount; i++)
                 {
                     var data = _buffer[i];
-                    var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(_dataTypes[i]));
+                    var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(_typeConversionTable[i].TargetDataType));
                     _pqDataColumns.Add(pqCol);
                 }
 
@@ -118,12 +159,9 @@ namespace SyncTK
             // Write out current record to buffer.
             for (int i = 0; i < _reader.FieldCount; i++)
             {
-                var val = _reader.GetValue(i);
-                if (val is DateTime)
-                    val = new DateTimeOffset((DateTime)val);
-
+                var val = _typeConversionTable.ConvertValue(_reader, i);
                 if (val != null)
-                    _buffer[i].Add(Convert.ChangeType(val, _dataTypes[i]));
+                    _buffer[i].Add(val);
             }
 
             return true;

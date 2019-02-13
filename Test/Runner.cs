@@ -39,6 +39,8 @@ namespace SyncTK.Test
                     runner.OnExecutionComplete = OnExecutionComplete;
                     runner.OnTestFailed = OnTestFailed;
                     runner.OnTestSkipped = OnTestSkipped;
+                    runner.OnTestStarting = OnTestStarting;
+                    runner.OnTestFinished = OnTestFinished;
                     runner.Start(typeName);
 
                     finished.WaitOne();
@@ -88,6 +90,26 @@ namespace SyncTK.Test
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("[SKIP] {0}: {1}", info.TestDisplayName, info.SkipReason);
+                Console.ResetColor();
+            }
+        }
+
+        static void OnTestStarting(TestStartingInfo info)
+        {
+            lock (consoleLock)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.Write($"{info.MethodName}...");
+                Console.ResetColor();
+            }
+        }
+
+        static void OnTestFinished(TestFinishedInfo info)
+        {
+            lock (consoleLock)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.WriteLine($"{Math.Round(info.ExecutionTime, 3)}s.");
                 Console.ResetColor();
             }
         }

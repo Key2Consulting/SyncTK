@@ -47,7 +47,7 @@ namespace SyncTK
                 var cmd = conn.CreateCommand();
                 cmd.CommandText = _query;
                 cmd.CommandTimeout = _timeout;
-                yield return new TypeConversionReader(cmd.ExecuteReader(), this.GetType());
+                yield return cmd.ExecuteReader();
             }
             finally
             {

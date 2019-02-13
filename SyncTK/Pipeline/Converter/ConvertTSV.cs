@@ -19,8 +19,7 @@ namespace SyncTK
         {
             foreach (var i in input)
             {
-                var reader = (TypeConversionReader)i;
-                reader.SetTarget(this.GetType());
+                var reader = (IDataReader)i;
                 var writer = new TSVWriter(reader, _header);
                 yield return writer;
             }

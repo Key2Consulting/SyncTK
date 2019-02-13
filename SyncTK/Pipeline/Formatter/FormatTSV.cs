@@ -19,7 +19,7 @@ namespace SyncTK
             foreach (var i in input)
             {
                 var stream = (StreamReader)i;
-                var reader = new TypeConversionReader(new TSVDataReader(stream, _header), this.GetType());
+                var reader = new TSVDataReader(stream, _header);
                 
                 yield return reader;
             }

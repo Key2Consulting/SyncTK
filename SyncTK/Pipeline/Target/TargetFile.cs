@@ -36,7 +36,7 @@ namespace SyncTK
         {
             foreach (var i in input)
             {
-                var writer = (IDataWriter)i;
+                var writer = (IFileWriter)i;
                 while (writer.Write(GetNextStreamWriter(), _fileReadNumber, _fileWriteNumber)) { }
                 _fileReadNumber++;
             }

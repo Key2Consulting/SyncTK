@@ -7,7 +7,12 @@ namespace SyncTK
 {
     internal class TypeConversionTable : List<TypeConversionMap>
     {
-        public TypeConversionTable(Type source, Type target, DataTable schemaTable)
+        /// <summary>
+        /// Creates a new TypeConversionTable with some general defaults. Each target should customize these
+        /// defaults per their own type conversion requirements.
+        /// </summary>
+        /// <param name="schemaTable">DataTable from source IDataReader.GetSchemaTable()</param>
+        public TypeConversionTable(DataTable schemaTable)
         {
             // Extract source schema information and apply to both source and target
             // as the preferred type map by default.
@@ -30,64 +35,26 @@ namespace SyncTK
                     TransportAsBinary = false
                 };
 
-                // If column uses special type, strip off namespace prefix.
-                var dataTypeParts = map.SourceDataTypeName.Split('.');
-                map.SourceDataTypeName = dataTypeParts[dataTypeParts.Length - 1];
-                map.TargetDataTypeName = map.SourceDataTypeName;
-
-                // Sql Server Source
-                if (source == typeof(SourceSqlServer))
+                // If column uses special type, strip off namespace prefix and default to binary.
+                if (map.SourceDataTypeName.Contains("."))
                 {
-                    if ((map.SourceDataTypeName.Contains("CHAR") || map.SourceDataTypeName.Contains("BINARY")) && map.SourceColumnSize > 8000)
-                    {
-                        map.SourceColumnSize = -1;
-                        map.TargetColumnSize = -1;
-                    }
+                    var dataTypeParts = map.SourceDataTypeName.Split('.');
+                    map.SourceDataTypeName = dataTypeParts[dataTypeParts.Length - 1];
+                    map.TargetDataTypeName = map.SourceDataTypeName;
+                    map.SourceDataType = typeof(object);
+                    map.TargetDataType = typeof(object);
+                }
+                else
+                {
+                    map.SourceDataType = Type.GetType(row["DataType"].ToString());
+                    map.TargetDataType = Type.GetType(row["DataType"].ToString());
                 }
 
-                // Sql Server Target
-                if (target == typeof(TargetSqlServer))
+                // If a variable length and the size is "unlimited", force size to -1 which denotes unlimited.
+                if ((map.SourceDataTypeName.Contains("CHAR") || map.SourceDataTypeName.Contains("BINARY")) && map.SourceColumnSize > 8000)
                 {
-                    switch (map.SourceDataTypeName)
-                    {
-                        case "STRING":
-                            map.TargetDataTypeName = "NVARCHAR";
-                            map.TargetColumnSize = -1;
-                            break;
-                    }
-                }
-
-                // Sql Server Target
-                if (target == typeof(TargetSqlServer))
-                {
-                    switch (map.SourceDataTypeName)
-                    {
-                        case "STRING":
-                            map.TargetDataTypeName = "NVARCHAR";
-                            map.TargetColumnSize = -1;
-                            break;
-                    }
-                }
-
-                // If a special type, force conversion compatible between different platforms.
-                //
-                switch (map.SourceDataTypeName)
-                {
-                    case "GEOGRAPHY":
-                        map.TransportAsBinary = true;
-                        break;
-                    case "GEOMETRY":
-                        map.TransportAsBinary = true;
-                        break;
-                    case "HIERARCHYID":
-                        map.TransportAsBinary = true;
-                        break;
-                }
-
-                // If a special type, and source and target are different systems and/or formats, save as binary.
-                if (map.TransportAsBinary && source.BaseType != target.BaseType)
-                {
-                    map.TargetDataTypeName = "BINARY";
+                    map.SourceColumnSize = -1;
+                    map.TargetColumnSize = -1;
                 }
 
                 this.Add(map);
@@ -120,6 +87,37 @@ namespace SyncTK
             }
 
             return (T)value;
+        }
+        
+        /// <summary>
+        /// Performs conversion for a value based on the current table.
+        /// </summary>
+        /// <param name="reader">IDataReader providing the value to convert.</param>
+        /// <param name="columnIndex">Index of the column containing the value.</param>
+        /// <returns></returns>
+        public object ConvertValue(IDataReader reader, int columnIndex)
+        {
+            if (this[columnIndex].TransportAsBinary)
+            {
+                var size = reader.GetBytes(columnIndex, 0, null, 0, 0);
+                var buffer = new byte[size];
+                reader.GetBytes(columnIndex, 0, buffer, 0, (int)size);
+                return buffer;
+            }
+            else if (this[columnIndex].SourceDataType == typeof(DateTime) && this[columnIndex].TargetDataType == typeof(DateTimeOffset))
+            {
+                return new DateTimeOffset((DateTime)reader.GetValue(columnIndex));
+            }
+            else
+            {
+                if (reader.IsDBNull(columnIndex))
+                    return null;
+                else
+                {
+                    return Convert.ChangeType(reader.GetValue(columnIndex), this[columnIndex].TargetDataType);
+                    // return reader.GetValue(columnIndex);
+                }
+            }
         }
     }
 }

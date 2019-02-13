@@ -10,6 +10,8 @@ namespace SyncTK
         public string TargetColumnName;
         public string SourceDataTypeName;
         public string TargetDataTypeName;
+        public Type SourceDataType;
+        public Type TargetDataType;
         public int SourceColumnSize;
         public int TargetColumnSize;
         public Int16 SourceNumericPrecision;
