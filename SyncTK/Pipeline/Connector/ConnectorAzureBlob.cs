@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.WindowsAzure.Storage.Blob;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,6 @@ namespace SyncTK
         protected string _connectionString;
         protected string _blobName;
         protected string _containerName;
+        protected CloudBlobContainer _container;
     }
 }

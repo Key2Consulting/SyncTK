@@ -6,54 +6,81 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage;
+using System.IO;
 
-namespace SyncTK.Pipeline.Target
+namespace SyncTK
 {
     public class TargetAzureBlob : ConnectorAzureBlob
     {
-        public TargetAzureBlob(string connectionString, string containerName, string blobName, bool createContainer = false)
+        protected int _fileRowLimit = 0;
+        protected int _fileReadNumber = 0;
+        protected int _fileWriteNumber = 0;
+        protected int _rowCounter = 0;
+        protected StreamWriter _streamWriter = null;
+
+        public TargetAzureBlob(string connectionString, string containerName, string blobName, int fileRowLimit = 1000000)
         {
             _connectionString = connectionString;
+            _containerName = containerName;
+            _blobName = blobName;
+            _fileRowLimit = fileRowLimit;
+        }
+
+        internal override void Validate(Sync pipeline, Component upstreamComponent)
+        {
+            this.Assert(_fileRowLimit == 0 || _blobName.Contains("*"), "Splitting output files requires use of wildcard character * in the blob path.");
+        }
+
+        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
 
-            CloudBlobContainer container = null;
-            if (createContainer)
+            _container = blobClient.GetContainerReference(_containerName);
+
+            foreach (var i in input)
             {
-                container = new CloudBlobContainer(new Uri("containerAddress"));
-                container.Create();
-            }
-            else
-            {
-                container = blobClient.GetContainerReference(containerName);
+                var writer = (IFileWriter)i;
+                while (writer.Write(GetNextStreamWriter(), _fileReadNumber, _fileWriteNumber)) { }
+                _fileReadNumber++;
             }
 
-            // container.ListBlobs().ToList().select
-
-            var blob = container.GetBlockBlobReference("blobName");
-            var blob2 = new CloudBlockBlob(new Uri("blobAbsoluteUri"));
-
-            var stream = blob.OpenRead();
+            // Targets don't produce output during processing.
+            return null;
         }
 
-        public TargetAzureBlob(string blobAbsoluteUri)
+        internal override void End(Sync pipeline, Component upstreamComponent)
         {
-            var container = new CloudBlobContainer(new Uri("containerAddress"));
-            container.Create();
-            // container.ListBlobs().ToList().select
-
-            var blob = container.GetBlockBlobReference("blobName");
-            var blob2 = new CloudBlockBlob(new Uri("blobAbsoluteUri"));
-            
-            var stream = blob.OpenRead();
+            // Dispose of last writer
+            if (_streamWriter != null)
+            {
+                _streamWriter.Flush();
+                _streamWriter.Close();
+                _streamWriter.Dispose();
+            }
         }
 
-        public TargetAzureBlob(string accountName, string keyValue, string container, string blobName, bool createContainer = false, bool useHTTPS = true)
+        protected StreamWriter GetNextStreamWriter()
         {
-            var storageCredentials = new StorageCredentials(accountName, keyValue);
-            var storageAccount = new CloudStorageAccount(storageCredentials, useHTTPS);
+            _rowCounter++;
 
-            var stream = storageAccount.CreateCloudBlobClient().GetContainerReference(container).GetBlobReference(blobName).OpenRead();
+            // If we've met our split limit
+            if (_rowCounter >= _fileRowLimit && _fileRowLimit > 0 || _streamWriter == null)
+            {
+                // Dispose of prior writer.
+                if (_streamWriter != null)
+                {
+                    _streamWriter.Flush();
+                    _streamWriter.Close();
+                    _streamWriter.Dispose();
+                }
+                _fileWriteNumber++;
+                var newBlobName = _blobName.Replace("*", this.GetCurrentTimeStampToken() + _fileWriteNumber.ToString());
+                var blob = _container.GetBlockBlobReference(newBlobName);
+                _streamWriter = new StreamWriter(blob.OpenWrite());
+            }
+
+            return _streamWriter;
         }
     }
 }

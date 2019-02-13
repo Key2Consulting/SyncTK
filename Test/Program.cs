@@ -18,8 +18,8 @@ namespace SyncTK.Test
             // Test Execution
             var runner = new Runner();
             string[] tests = {
-                "SyncTK.Test.UnitTests.FileTests",
-                "SyncTK.Test.UnitTests.SqlServerTests",
+                //"SyncTK.Test.UnitTests.FileTests",
+                //"SyncTK.Test.UnitTests.SqlServerTests",
                 "SyncTK.Test.UnitTests.AzureTests"
             };
             var r = runner.Run(tests);

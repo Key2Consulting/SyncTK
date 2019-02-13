@@ -21,7 +21,7 @@ namespace SyncTK
             _path = path;
         }
 
-        public TargetFile(string path, int fileRowLimit)
+        public TargetFile(string path, int fileRowLimit = 1000000)
         {
             _path = path;
             _fileRowLimit = fileRowLimit;
