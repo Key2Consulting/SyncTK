@@ -13,7 +13,12 @@ namespace SyncTK
         protected const string _delimeter = "\t";
         protected const string _newline = "\r\n";
 
-        public WriteTSV(bool header, int fileRowLimit = 1000000) : base(fileRowLimit)
+        public WriteTSV(bool header) : this(header, 0)
+        {
+            _header = header;
+        }
+
+        public WriteTSV(bool header, int fileRowLimit) : base(fileRowLimit)
         {
             _header = header;
         }

@@ -17,6 +17,7 @@ namespace SyncTK
     /// </remarks>
     public class WriteParquet : WriteFormatter
     {
+        protected bool _compress;
         protected int _rowGroupRowLimit;
         protected int _rowGroupWriteCount;
         protected List<ArrayList> _buffer = new List<ArrayList>();
@@ -26,12 +27,17 @@ namespace SyncTK
         protected Parquet.Data.Schema _pqSchema;
         protected Parquet.ParquetWriter _pqWriter;
 
-        public WriteParquet() : this(0, 0)
+        public WriteParquet() : this(true, 0, 0)
         {
         }
-        
-        public WriteParquet(int rowGroupRowLimit, int fileRowLimit) : base(fileRowLimit)
+
+        public WriteParquet(bool compress) : this(compress, 0, 0)
         {
+        }
+
+        public WriteParquet(bool compress, int rowGroupRowLimit, int fileRowLimit) : base(fileRowLimit)
+        {
+            _compress = compress;
             _rowGroupRowLimit = rowGroupRowLimit;
         }
 
@@ -65,9 +71,9 @@ namespace SyncTK
             for (int i = 0; i < _reader.FieldCount; i++)
             {
                 var map = GetTypeConversionTable()[i];
-                _buffer.Add(new ArrayList());
-                _dataTypes.Add(map.TargetDataType);
-                _pqDataFields.Add(new Parquet.Data.DataField(map.TargetColumnName, map.TargetDataType));
+                _buffer.Add(new ArrayList(_rowGroupRowLimit));
+                _dataTypes.Add(map.Target.DataType);
+                _pqDataFields.Add(new Parquet.Data.DataField(map.Target.ColumnName, GetNullableType(map.Target.DataType)));
             }
 
             _pqSchema = new Parquet.Data.Schema(_pqDataFields);
@@ -76,11 +82,18 @@ namespace SyncTK
         protected override void OnBeginFile()
         {
             _pqWriter = new Parquet.ParquetWriter(_pqSchema, _writer.BaseStream);
+
+            // Apply compression setting.
+            if (_compress)
+                _pqWriter.CompressionMethod = CompressionMethod.Gzip;
+            else
+                _pqWriter.CompressionMethod = CompressionMethod.None;
         }
 
         protected override void OnEndFile()
         {
             FlushRowGroup();
+            _pqWriter.Dispose();
         }
 
         protected override void OnWriteLine()
@@ -89,8 +102,8 @@ namespace SyncTK
             for (int i = 0; i < _reader.FieldCount; i++)
             {
                 var val = _reader.GetValue(i);
-                if (val != null)
-                    _buffer[i].Add(val);
+                // if (val != null)
+                _buffer[i].Add(val);
             }
 
             // If we've met the row group size requirement, flush it.
@@ -104,7 +117,9 @@ namespace SyncTK
             for (int i = 0; i < _reader.FieldCount; i++)
             {
                 var data = _buffer[i];
-                var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(GetTypeConversionTable()[i].TargetDataType));
+                var dataType = GetTypeConversionTable()[i].Target.DataType;
+                var toType = GetNullableType(dataType);
+                var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(toType));
                 _pqDataColumns.Add(pqCol);
             }
 
@@ -124,8 +139,50 @@ namespace SyncTK
             {
                 b.Clear();
             }
-            GC.Collect();
             _rowGroupWriteCount = 0;
+        }
+
+        //// https://stackoverflow.com/questions/108104/how-do-i-convert-a-system-type-to-its-nullable-version
+        //Type GetNullableType(Type type)
+        //{
+        //    // Use Nullable.GetUnderlyingType() to remove the Nullable<T> wrapper if type is already nullable.
+        //    var underlyingType = Nullable.GetUnderlyingType(type);
+        //    if (underlyingType != null && underlyingType.IsValueType)
+        //        return typeof(Nullable<>).MakeGenericType(underlyingType);
+        //    else
+        //        return type;
+        //}
+        protected Type GetNullableType(Type TypeToConvert)
+        {
+            // Abort if no type supplied
+            if (TypeToConvert == null)
+                return null;
+
+            // If the given type is already nullable, just return it
+            if (IsTypeNullable(TypeToConvert))
+                return TypeToConvert;
+
+            // If the type is a ValueType and is not System.Void, convert it to a Nullable<Type>
+            if (TypeToConvert.IsValueType && TypeToConvert != typeof(void))
+                return typeof(Nullable<>).MakeGenericType(TypeToConvert);
+
+            // Done - no conversion
+            return null;
+        }
+
+        protected bool IsTypeNullable(Type TypeToTest)
+        {
+            // Abort if no type supplied
+            if (TypeToTest == null)
+                return false;
+
+            // If this is not a value type, it is a reference type, so it is automatically nullable
+            //  (NOTE: All forms of Nullable<T> are value types)
+            if (!TypeToTest.IsValueType)
+                return true;
+
+            // Report whether TypeToTest is a form of the Nullable<> type
+            return TypeToTest.IsGenericType && TypeToTest.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
     }
 }

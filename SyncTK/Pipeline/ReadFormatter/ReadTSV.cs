@@ -26,20 +26,23 @@ namespace SyncTK
             // Even if no header is set, we still need to know how many columns there are.
             _firstLine = _reader.ReadLine();
             var columns = _firstLine.Split(_splitDelimeter, StringSplitOptions.None);
-            _columnName = new string[columns.Length];
-            _readBuffer = new object[columns.Length];       // preallocate once and only once for performance
 
             // Foreach of the extract columns from the first row
             for (var i = 0; i < columns.Length; i++)
             {
-                _columnName[i] = columns[i];
-                _readBuffer[i] = null;
-
-                // If we don't have a header, use the column number as the name
-                if (!_header)
+                // Even though we only support the string data type, we must generate a SchemaTable
+                // to adhere to the IDataReader standard (and required by importers).
+                var columnSchema = new ColumnSchema()
                 {
-                    _columnName[i] = i.ToString();
-                }
+                    ColumnName = _header ? columns[i] : i.ToString(),       // if no header, use the column ordinal
+                    ColumnSize = -1,
+                    DataType = typeof(System.String),
+                    DataTypeName = "STRING",
+                    AllowNull = true
+                    // textCol["UdtAssemblyQualifiedName"] = "PowerSync.TextFileDataReader.String";
+                };
+
+                _columnSchema.Add(columnSchema);
             }
         }
 

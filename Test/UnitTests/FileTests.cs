@@ -30,5 +30,38 @@ namespace SyncTK.Test.UnitTests
             t.Start();
             t.Wait();
         }
+
+        [Fact]
+        public void TSVToParquetLarge()
+        {
+            new Pipeline()
+                .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\Sample10000.txt"))
+                .ReadFormat(new ReadTSV(true))
+                .WriteFormat(new WriteParquet())
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVToParquetLarge_*.parquet"))
+                .Exec();
+        }
+
+        [Fact]
+        public void OddParquetLargeToParquetUncompressed()
+        {
+            new Pipeline()
+                .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\OddTypesLarge.parquet"))
+                .ReadFormat(new ReadParquet())
+                .WriteFormat(new WriteParquet(true))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\OddParquetLargeToParquetUncompressed_*.parquet"))
+                .Exec();
+        }
+
+        [Fact]
+        public void ParquetToTSVLarge()
+        {
+            new Pipeline()
+                .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\Sample10000.parquet"))
+                .ReadFormat(new ReadParquet())
+                .WriteFormat(new WriteTSV(true))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetToTSVLarge_*.txt"))
+                .Exec();
+        }
     }
 }

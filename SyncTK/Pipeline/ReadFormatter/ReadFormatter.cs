@@ -10,7 +10,8 @@ namespace SyncTK.Internal
 {
     public abstract class ReadFormatter : Component, IDataReader
     {
-        protected string [] _columnName;
+        internal List<ColumnSchema> _columnSchema = new List<ColumnSchema>();
+        protected DataTable _schemaTable;
         protected object [] _readBuffer;
         protected IEnumerator<object> _input;
         protected StreamReader _reader;
@@ -29,6 +30,12 @@ namespace SyncTK.Internal
             {
                 _reader = (StreamReader)_input.Current;
                 OnBeginReading();
+
+                // Allocate read buffer.  It's assummed column schema is created during OnBeginReading.
+                Assert(_columnSchema.Count > 0, "Column schema not defined prior to reading data.");
+                if (_readBuffer == null)
+                    _readBuffer = new object[_columnSchema.Count];
+
                 OnBeginFile();
             }
             else
@@ -66,9 +73,9 @@ namespace SyncTK.Internal
         {
             get
             {
-                for (int i = 0; i < _columnName.Length; i++)
+                for (int i = 0; i < _columnSchema.Count; i++)
                 {
-                    if (_columnName[i] == name)
+                    if (_columnSchema[i].ColumnName == name)
                         return _readBuffer[i];
                 }
                 return null;
@@ -106,7 +113,7 @@ namespace SyncTK.Internal
         {
             get
             {
-                return _columnName.Length;
+                return _columnSchema.Count;
             }
         }
 
@@ -204,14 +211,14 @@ namespace SyncTK.Internal
 
         public string GetName(int i)
         {
-            return _columnName[i].ToString();
+            return _columnSchema[i].ColumnName;
         }
 
         public int GetOrdinal(string name)
         {
-            for (int i = 0; i < _columnName.Length; i++)
+            for (int i = 0; i < _columnSchema.Count; i++)
             {
-                if (_columnName[i] == name)
+                if (_columnSchema[i].ColumnName == name)
                     return i;
             }
             return -1;
@@ -229,7 +236,8 @@ namespace SyncTK.Internal
 
         public int GetValues(object[] values)
         {
-            throw new NotImplementedException();
+            values = _readBuffer;
+            return _readBuffer.Length;
         }
 
         public bool IsDBNull(int i)
@@ -280,38 +288,37 @@ namespace SyncTK.Internal
 
         public DataTable GetSchemaTable()
         {
-            // Even though we only support the string data type, we must generate a SchemaTable
-            // to adhere to the IDataReader standard (and required by importers).
-            DataTable dt = new DataTable();
-            dt.Clear();
-            dt.Columns.Add("ColumnName");
-            dt.Columns.Add("ColumnOrdinal");
-            dt.Columns.Add("ColumnSize");
-            dt.Columns.Add("DataType");
-            dt.Columns.Add("DataTypeName");
-            dt.Columns.Add("AllowDBNull");
-            dt.Columns.Add("NumericPrecision");
-            dt.Columns.Add("NumericScale");
-            dt.Columns.Add("UdtAssemblyQualifiedName");
-
-            // For each column in the input text file
-            for (int i = 0; i < _columnName.Length; i++)
+            if (_schemaTable == null)
             {
-                // Add a row describing that column's schema.
-                DataRow textCol = dt.NewRow();
-                textCol["ColumnName"] = _columnName[i];
-                textCol["ColumnOrdinal"] = i;
-                textCol["ColumnSize"] = -1;
-                textCol["DataType"] = typeof(System.String);
-                textCol["DataTypeName"] = "string";
-                textCol["AllowDBNull"] = true;
-                textCol["NumericPrecision"] = null;
-                textCol["NumericScale"] = null;
-                textCol["UdtAssemblyQualifiedName"] = "PowerSync.TextFileDataReader.String";
-                dt.Rows.Add(textCol);
+                _schemaTable = new DataTable();
+                _schemaTable.Clear();
+                _schemaTable.Columns.Add("ColumnName");
+                _schemaTable.Columns.Add("ColumnOrdinal");
+                _schemaTable.Columns.Add("ColumnSize");
+                _schemaTable.Columns.Add("DataType");
+                _schemaTable.Columns.Add("DataTypeName");
+                _schemaTable.Columns.Add("AllowDBNull");
+                _schemaTable.Columns.Add("NumericPrecision");
+                _schemaTable.Columns.Add("NumericScale");
+
+                // For each column in the input text file
+                for (int i = 0; i < _columnSchema.Count; i++)
+                {
+                    // Add a row describing that column's schema.
+                    DataRow textCol = _schemaTable.NewRow();
+                    textCol["ColumnName"] = _columnSchema[i].ColumnName;
+                    textCol["ColumnOrdinal"] = i;
+                    textCol["ColumnSize"] = _columnSchema[i].ColumnSize;
+                    textCol["DataType"] = _columnSchema[i].DataType;
+                    textCol["DataTypeName"] = _columnSchema[i].DataTypeName;
+                    textCol["AllowDBNull"] = _columnSchema[i].AllowNull;
+                    textCol["NumericPrecision"] = _columnSchema[i].NumericPrecision;
+                    textCol["NumericScale"] = _columnSchema[i].NumericScale;
+                    _schemaTable.Rows.Add(textCol);
+                }
             }
 
-            return dt;
+            return _schemaTable;
         }
         #endregion
     }

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    internal class TypeConversionTable : List<TypeConversionItem>
+    internal class TypeConversionTable : List<TypeConversionMap>
     {
         public TypeConversionTable()
         {

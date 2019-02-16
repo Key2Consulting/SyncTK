@@ -41,7 +41,7 @@ namespace SyncTK
             }
         }
 
-        internal StreamWriter GetNextStreamWriter()
+        internal virtual StreamWriter GetNextStreamWriter()
         {
             // Dispose of prior writer.
             if (_streamWriter != null)
