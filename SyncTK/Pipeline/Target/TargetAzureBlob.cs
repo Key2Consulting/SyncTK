@@ -7,11 +7,17 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage;
 using System.IO;
+using SyncTK.Internal;
 
 namespace SyncTK
 {
-    public class TargetAzureBlob : ConnectorAzureBlob
+    public class TargetAzureBlob : Target
     {
+        protected string _connectionString;
+        protected string _blobName;
+        protected string _containerName;
+        protected CloudBlobContainer _container;
+
         protected int _fileRowLimit = 0;
         protected int _fileReadNumber = 0;
         protected int _fileWriteNumber = 0;
@@ -26,12 +32,12 @@ namespace SyncTK
             _fileRowLimit = fileRowLimit;
         }
 
-        internal override void Validate(Sync pipeline, Component upstreamComponent)
+        internal override void Validate(Pipeline pipeline)
         {
             this.Assert(_fileRowLimit == 0 || _blobName.Contains("*"), "Splitting output files requires use of wildcard character * in the blob path.");
         }
 
-        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
@@ -49,7 +55,7 @@ namespace SyncTK
             return null;
         }
 
-        internal override void End(Sync pipeline, Component upstreamComponent)
+        internal override void End(Pipeline pipeline)
         {
             // Dispose of last writer
             if (_streamWriter != null)

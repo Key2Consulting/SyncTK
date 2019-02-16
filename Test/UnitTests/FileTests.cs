@@ -9,22 +9,21 @@ namespace SyncTK.Test.UnitTests
         [Fact]
         public void TSVToTSVLocal()
         {
-            new Sync()
+            new Pipeline()
                 .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\*.txt"))
-                .WithFormat(new FormatTSV(true))
-                .ConvertTo(new ConvertTSV(true))
+                .ReadFormat(new ReadTSV(true))
+                .WriteFormat(new WriteTSV(true))
                 .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVToTSVLocal_*.txt"))
                 .Exec();
-
         }
 
         [Fact]
         public void CSVToCSVLocalAsync()
         {
-            var t = new Sync()
+            var t = new Pipeline()
                 .From(new SourceFile($"{GetConfig("SampleFilesRoot")}\\*.txt"))
-                .WithFormat(new FormatTSV(true))
-                .ConvertTo(new ConvertTSV(true))
+                .ReadFormat(new ReadTSV(true))
+                .WriteFormat(new WriteTSV(true))
                 .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\CSVToCSVLocalAsync_*.txt"))
                 .ExecAsync();
 

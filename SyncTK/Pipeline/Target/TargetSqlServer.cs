@@ -3,16 +3,24 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data.SqlClient;
 using System.Data;
-using SyncTK;
+using SyncTK.Internal;
 using System.Threading.Tasks;
 
 namespace SyncTK
 {
-    public class TargetSqlServer : ConnectorSqlServer
+    public class TargetSqlServer : Target
     {
-        protected int _batchSize = 0;       // intelligently set this based on environment & configuration?
+        protected int _batchSize = 0;
         protected bool _create;
         protected bool _overwrite;
+        protected string _connectionString;
+        protected string _server;
+        protected string _database;
+        protected string _schema;
+        protected string _table;
+        protected int _timeout;
+        protected string _query;
+        protected SqlConnection _connection;
 
         public TargetSqlServer(string connectionString, string schema, string table, bool create = true, bool overwrite = false, int timeout = 3600, int batchSize = 10000)
         {
@@ -35,39 +43,83 @@ namespace SyncTK
             _batchSize = batchSize;
         }
 
-        internal override void Validate(Sync pipeline, Component upstreamComponent)
+        internal override void Validate(Pipeline pipeline)
         {
-            Assert(!(upstreamComponent.GetType().Name.Contains("Convert")), "Cannot use converters with this target.");
+            var upstreamComponent = GetUpstreamComponent(pipeline);
+            Assert(pipeline.FindComponentType<WriteFormatter>() == null, "Cannot use write formatters with a database target.");
         }
 
-        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
         {
-            SqlConnection conn = null;
-
-            try
+            using (_connection = new SqlConnection(GetConnectionString()))
             {
-                conn = new SqlConnection(GetConnectionString());
-                _connections.Add(conn);
-                conn.Open();
+                _connection.Open();
 
-                var writer = new SqlServerDataWriter(conn, _schema, _table, _create, _overwrite, _timeout, _batchSize);
                 foreach (var i in input)
                 {
                     var reader = (IDataReader)i;
-                    writer.Write(reader);
-                }
 
-                // Targets don't produce output during processing.
-                return null;
-            }
-            finally
-            {
-                if (conn != null)
-                {
-                    conn.Close();
-                    conn.Dispose();
+                    // Import data from all input readers asynchronously.
+                    var blk = new SqlBulkCopy(_connection.ConnectionString, SqlBulkCopyOptions.TableLock)
+                    {
+                        DestinationTableName = $"[{_schema}].[{_table}]",
+                        BulkCopyTimeout = _timeout,
+                        BatchSize = _batchSize
+                    };
+
+                    // If create flag is set, run the create script.
+                    if (_create)
+                    {
+                        CreateTargetTable();
+                    }
+
+                    // Bulk insert via SqlBulkCopy
+                    blk.WriteToServer(reader);
                 }
             }
+
+            // Targets don't produce output during processing.
+            return null;
+        }
+
+        protected string GetConnectionString()
+        {
+            if (_connectionString != null)
+                return _connectionString;
+            else
+                return $"Server ={ _server}; Integrated Security = true; Database ={ _database}";
+        }
+
+        protected void CreateTargetTable()
+        {
+            // Build a table create script using the provided schema information.  Should automatically check
+            // if table exists before executing.
+            string columnSQL = "";
+            foreach (var c in GetTypeConversionTable())
+            {
+                columnSQL +=
+                    $"[{c.TargetColumnName}] [" + c.TargetDataTypeName + "] "
+                    + ""
+                    + Util.IIF(c.TargetDataTypeName.Contains("CHAR") && c.TargetColumnSize == -1, "(MAX)")
+                    + Util.IIF(c.TargetDataTypeName.Contains("CHAR") && c.TargetColumnSize > 0, $"({c.TargetColumnSize.ToString()})")
+                    + Util.IIF(c.TargetDataTypeName == "DECIMAL", $"({c.TargetNumericPrecision.ToString()}, {c.TargetNumericScale.ToString()})")
+                    + Util.IIF(c.TargetDataTypeName == "NUMERIC", $"({c.TargetNumericPrecision.ToString()}, {c.TargetNumericScale.ToString()})")
+                    + Util.IIF(c.TargetDataTypeName.Contains("BINARY") && c.TargetColumnSize == -1, "MAX")
+                    + Util.IIF(c.TargetDataTypeName.Contains("BINARY") && c.TargetColumnSize > 0, $"({c.TargetColumnSize.ToString()})")
+                    + Util.IIF(c.TargetDataTypeName == "DATETIME2", $"({c.TargetNumericScale.ToString()})")
+                    + ""
+                    + Util.IIF(c.TargetAllowNull, "NULL", "NOT NULL")
+                    + ",";
+            }
+
+            var createSQL = $"CREATE TABLE [{_schema}].[{_table}]( {columnSQL} )";
+            var dropSQL = _overwrite ? $"DROP TABLE IF EXISTS {_schema}].[{_table}]( {columnSQL} )" : "";
+            var script = $"IF OBJECT_ID('[{_schema}].[{_table}]') IS NULL{Environment.NewLine}    {createSQL}";
+
+            // Execute the command.
+            var cmd = _connection.CreateCommand();
+            cmd.CommandText = script;
+            cmd.ExecuteNonQuery();
         }
     }
 }

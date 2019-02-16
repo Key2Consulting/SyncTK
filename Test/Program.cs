@@ -19,8 +19,8 @@ namespace SyncTK.Test
             var runner = new Runner();
             string[] tests = {
                 //"SyncTK.Test.UnitTests.FileTests",
-                //"SyncTK.Test.UnitTests.SqlServerTests",
-                "SyncTK.Test.UnitTests.AzureTests"
+                "SyncTK.Test.UnitTests.SqlServerTests"
+                //"SyncTK.Test.UnitTests.AzureTests"
             };
             var r = runner.Run(tests);
 
@@ -56,35 +56,9 @@ namespace SyncTK.Test
                     EXEC sp_executesql N'ALTER DATABASE [SyncTK] SET SINGLE_USER WITH ROLLBACK IMMEDIATE'
                     EXEC sp_executesql N'DROP DATABASE [SyncTK]'
                 END
-                CREATE DATABASE [SyncTK]
-                
-                CREATE TABLE [SyncTK].[dbo].[OddTypes](
-	                [ID] [int] NULL,
-	                [Geography] [geography] NULL,
-	                [Xml] [xml] NULL,
-	                [Binary] [binary](50) NULL,
-	                [DateTime2] [datetime2](7) NULL,
-	                [HierarchyID] [hierarchyid] NULL,
-	                [Geometry] [geometry] NULL,
-	                [SmallMoney] [smallmoney] NULL,
-	                [TimeStamp] [timestamp] NULL
-                )
-
-                INSERT INTO [SyncTK].[dbo].[OddTypes]
-                VALUES
-	                (
-		                1
-		                ,geography::Point(47.65100, -122.34900, 4326)
-		                ,'<xml></xml>'
-		                ,CAST('hello world' AS BINARY(50))
-		                ,GETDATE()
-		                ,'/1/'
-		                ,geometry::STGeomFromText('LINESTRING (100 100, 20 180, 180 180)', 0)
-		                ,44.11
-		                ,NULL
-	                )";
+                CREATE DATABASE [SyncTK]";
             
-            using (var c = new SqlConnection(@"Server=(LocalDb)\MSSQLLocalDB;Integrated Security=true;Database=master"))
+            using (var c = new SqlConnection($"Server={cfg.GetConfig("SQLServer")};Integrated Security=true;Database=master"))
             {
                 c.Open();
                 var cmd = c.CreateCommand();

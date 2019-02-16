@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SyncTK
 {
-    internal class TypeConversionMap
+    internal class TypeConversionItem
     {
         public string SourceColumnName;
         public string TargetColumnName;

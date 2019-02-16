@@ -2,48 +2,58 @@
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
-namespace SyncTK
+namespace SyncTK.Internal
 {
-    internal class TSVDataReader : IDataReader
+    public abstract class ReadFormatter : Component, IDataReader
     {
-        protected const string _delimeter = "\t";
-        protected string[] _splitDelimeter;
-        protected bool _header;
-        protected System.Collections.ArrayList _columnName;
-        protected System.Collections.ArrayList _readBuffer;
+        protected string [] _columnName;
+        protected object [] _readBuffer;
+        protected IEnumerator<object> _input;
         protected StreamReader _reader;
         protected int _readCount = 0;
-        protected string _firstLine = "";
 
-        public TSVDataReader(StreamReader reader, bool header)
+        internal ReadFormatter()
         {
-            _reader = reader;
-            _header = header;
-            _splitDelimeter = new string[] { _delimeter };
-
-            // Even if no header is set, we still need to know how many columns there are.
-            _firstLine = _reader.ReadLine();
-            var columns = _firstLine.Split(_splitDelimeter, StringSplitOptions.None);
-            _columnName = new System.Collections.ArrayList(columns.Length);
-            _readBuffer = new System.Collections.ArrayList(columns.Length);           // preallocate once and only once for performance
-
-            // Foreach of the extract columns from the first row
-            for (var i = 0; i < columns.Length; i++)
-            {
-                _columnName.Add(columns[i]);
-                _readBuffer.Add(null);
-
-                // If we don't have a header, use the column number as the name
-                if (!_header)
-                {
-                    _columnName[i] = i.ToString();
-                }
-            }
         }
 
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        {
+            _input = input.GetEnumerator();
+
+            // We've just started to get first stream and raise initialization events.
+            if (_input.MoveNext())
+            {
+                _reader = (StreamReader)_input.Current;
+                OnBeginReading();
+                OnBeginFile();
+            }
+            else
+            {
+                // It would be very odd to have no input streams when no records have been read.
+            }
+
+            return null;
+        }
+
+        protected virtual void OnBeginReading()
+        {
+        }
+
+        protected virtual void OnBeginFile()
+        {
+        }
+
+        protected virtual void OnEndReading()
+        {
+        }
+
+        protected abstract bool OnReadLine();
+
+        #region IDataReader Interface
         public object this[int i]
         {
             get
@@ -56,7 +66,12 @@ namespace SyncTK
         {
             get
             {
-                return _readBuffer[_columnName.IndexOf(name)];
+                for (int i = 0; i < _columnName.Length; i++)
+                {
+                    if (_columnName[i] == name)
+                        return _readBuffer[i];
+                }
+                return null;
             }
         }
 
@@ -72,7 +87,10 @@ namespace SyncTK
         {
             get
             {
-                return _reader.BaseStream.Position > 0;
+                if (_reader != null || _reader.BaseStream.Position <= 0)
+                    return true;
+                else
+                    return true;
             }
         }
 
@@ -88,7 +106,7 @@ namespace SyncTK
         {
             get
             {
-                return _columnName.Count;
+                return _columnName.Length;
             }
         }
 
@@ -191,7 +209,12 @@ namespace SyncTK
 
         public int GetOrdinal(string name)
         {
-            return _columnName.IndexOf(name);
+            for (int i = 0; i < _columnName.Length; i++)
+            {
+                if (_columnName[i] == name)
+                    return i;
+            }
+            return -1;
         }
 
         public string GetString(int i)
@@ -221,38 +244,30 @@ namespace SyncTK
 
         public bool Read()
         {
-            // Read the next line from the input stream. If the first line, we've already read it earlier during initialization
-            // unless it was the header
-            _readCount++;
-            string line = "";
-            if (_readCount > 1 || _header)
-            {
-                line = _reader.ReadLine();
-            }
-            else
-            {
-                line = _firstLine;
-            }
-
             try
             {
-                // If no data was read, we must be at the end of the file.
-                if (line == null || line.Trim().Length == 0)
+                // Read next line.
+                bool read = OnReadLine();
+
+                // If we're out of data in the current stream.
+                if (!read)
                 {
-                    _reader.Close();
-                    return false;
-                }
+                    _reader.Dispose();
 
-                // Use simple delimeter parsing (i.e. Split) with TSV.
-                var columns = line.Split(_splitDelimeter, StringSplitOptions.None);
+                    // Attempt to get a new stream from our source.
+                    if (!_input.MoveNext())
+                    {
+                        // We're out of data, clean up and inform our consumer.
+                        OnEndReading();
+                        return false;
+                    }
 
-                // If first record, initialize. Must initialize within our read logic since we're streaming and
-                // we need to gather some basic information about the data such as column count.
-
-                // Foreach of the extract columns
-                for (var i = 0; i < columns.Length; i++)
-                {
-                    _readBuffer[i] = columns[i];
+                    // Still have input streams to process.
+                    _reader = (StreamReader)_input.Current;
+                    OnBeginFile();
+                    read = OnReadLine();
+                    if (!read)
+                        return false;
                 }
 
                 return true;
@@ -280,7 +295,7 @@ namespace SyncTK
             dt.Columns.Add("UdtAssemblyQualifiedName");
 
             // For each column in the input text file
-            for (int i = 0; i < _columnName.Count; i++)
+            for (int i = 0; i < _columnName.Length; i++)
             {
                 // Add a row describing that column's schema.
                 DataRow textCol = dt.NewRow();
@@ -298,5 +313,6 @@ namespace SyncTK
 
             return dt;
         }
+        #endregion
     }
 }

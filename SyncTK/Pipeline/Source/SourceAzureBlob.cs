@@ -7,11 +7,17 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage;
 using System.IO;
+using SyncTK.Internal;
 
 namespace SyncTK
 {
-    public class SourceAzureBlob : ConnectorAzureBlob
+    public class SourceAzureBlob : Source
     {
+        protected string _connectionString;
+        protected string _blobName;
+        protected string _containerName;
+        protected CloudBlobContainer _container;
+
         protected List<StreamReader> _streamReaders = new List<StreamReader>();
 
         public SourceAzureBlob(string connectionString, string containerName, string blobName)
@@ -21,11 +27,11 @@ namespace SyncTK
             _blobName = blobName;
         }
 
-        internal override void Validate(Sync pipeline, Component upstreamComponent)
+        internal override void Validate(Pipeline pipeline)
         {
         }
 
-        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_connectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
@@ -42,7 +48,7 @@ namespace SyncTK
             }
         }
 
-        internal override void End(Sync pipeline, Component upstreamComponent)
+        internal override void End(Pipeline pipeline)
         {
             foreach (var reader in _streamReaders)
             {

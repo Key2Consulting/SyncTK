@@ -4,10 +4,11 @@ using System.Data;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using SyncTK.Internal;
 
 namespace SyncTK
 {
-    public class SourceFile : Component
+    public class SourceFile : Source
     {
         protected List<string> _paths = new List<string>();
         protected List<string> _rootPaths = new List<string>();
@@ -24,7 +25,7 @@ namespace SyncTK
             _paths.AddRange(paths);
         }
 
-        internal override void Validate(Sync pipeline, Component upstreamComponent)
+        internal override void Validate(Pipeline pipeline)
         {
             // For every path we're loading.
             foreach (var path in _paths)
@@ -45,7 +46,7 @@ namespace SyncTK
             }
         }
 
-        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
         {
             // For every path we're loading.
             for (int i = 0; i < _rootPaths.Count; i++)
@@ -71,7 +72,7 @@ namespace SyncTK
             }
         }
 
-        internal override void End(Sync pipeline, Component upstreamComponent)
+        internal override void End(Pipeline pipeline)
         {
             foreach (var reader in _streamReaders)
             {

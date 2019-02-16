@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using SyncTK.Internal;
 
 namespace SyncTK
 {
-    public class FormatParquet: Component
+    public class ReadParquet: Component
     {
-        public FormatParquet()
+        public ReadParquet()
         {
         }
 
-        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
         {
             foreach (var i in input)
             {

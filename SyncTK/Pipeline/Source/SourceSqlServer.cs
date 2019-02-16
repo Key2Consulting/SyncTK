@@ -3,12 +3,21 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data.SqlClient;
 using System.Data;
-using SyncTK;
+using SyncTK.Internal;
 
 namespace SyncTK
 {
-    public class SourceSqlServer : ConnectorSqlServer
+    public class SourceSqlServer : Source
     {
+        protected string _connectionString;
+        protected string _server;
+        protected string _database;
+        protected string _schema;
+        protected string _table;
+        protected int _timeout;
+        protected string _query;
+        protected SqlConnection _connection;
+
         public SourceSqlServer(string connectionString, string schema, string table, int timeout = 3600)
         {
             _connectionString = connectionString;
@@ -35,28 +44,24 @@ namespace SyncTK
             _query = query;
         }
 
-        internal override IEnumerable<object> Process(Sync pipeline, Component upstreamComponent, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
         {
-            SqlConnection conn = null;
-
-            try
+            using (_connection = new SqlConnection(GetConnectionString()))
             {
-                conn = new SqlConnection(GetConnectionString());
-                _connections.Add(conn);
-                conn.Open();
-                var cmd = conn.CreateCommand();
+                _connection.Open();
+                var cmd = _connection.CreateCommand();
                 cmd.CommandText = _query;
                 cmd.CommandTimeout = _timeout;
                 yield return cmd.ExecuteReader();
             }
-            finally
-            {
-                if (conn != null)
-                {
-                    conn.Close();
-                    conn.Dispose();
-                }
-            }
+        }
+
+        protected string GetConnectionString()
+        {
+            if (_connectionString != null)
+                return _connectionString;
+            else
+                return $"Server ={ _server}; Integrated Security = true; Database ={ _database}";
         }
     }
 }
