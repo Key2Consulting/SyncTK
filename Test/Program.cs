@@ -20,7 +20,7 @@ namespace SyncTK.Test
             string[] tests = {
                 "SyncTK.Test.UnitTests.GenerateSampleFiles",
                 "SyncTK.Test.UnitTests.FileTests",
-                "SyncTK.Test.UnitTests.SqlServerTests",
+                "SyncTK.Test.UnitTests.SqlServerTests"
                 //"SyncTK.Test.UnitTests.AzureTests"
             };
             var r = runner.Run(tests);

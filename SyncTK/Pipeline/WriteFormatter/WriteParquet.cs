@@ -73,7 +73,9 @@ namespace SyncTK
                 var map = GetTypeConversionTable()[i];
                 _buffer.Add(new ArrayList(_rowGroupRowLimit));
                 _dataTypes.Add(map.Target.DataType);
-                _pqDataFields.Add(new Parquet.Data.DataField(map.Target.ColumnName, Util.GetNullableType(map.Target.DataType)));
+                var pqType = (Parquet.Data.DataType)Enum.Parse(typeof(Parquet.Data.DataType), map.Target.DataTypeName);
+                var pqField = new Parquet.Data.DataField(map.Target.ColumnName, pqType, map.Target.AllowNull);
+                _pqDataFields.Add(pqField);
             }
 
             _pqSchema = new Parquet.Data.Schema(_pqDataFields);

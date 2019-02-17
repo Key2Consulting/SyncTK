@@ -41,7 +41,7 @@ namespace SyncTK.Test.UnitTests
         {
             new Pipeline()
                 .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex*.parquet"))
-                .ReadFormat(new ReadTSV())
+                .ReadFormat(new ReadParquet())
                 .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "ParquetToDBComplex", true))
                 .Exec();
         }

@@ -12,6 +12,12 @@ namespace SyncTK.Internal
     /// A simple wrapper around another DataReader that provides type conversion between various source and target formats.
     /// Conversions are handled by the TypeConversionTable.Convert method.
     /// </summary>
+    /// <remarks>
+    /// The premise of type conversion is that sources should translate their types to a standard type and targets should
+    /// translate from the standard type to their type. During translation, type information can get lost, so there are exceptions
+    /// to the rule. For instance, when copying between the same source and/or format, the target can elect to accept the original
+    /// source type information.
+    /// </remarks>
     internal class TypeConverter : Component, IDataReader
     {
         protected Source _source;
@@ -58,49 +64,32 @@ namespace SyncTK.Internal
         {
             TypeConversionTable = new TypeConversionTable();
 
-            // Extract source schema information and apply to both source and target
-            // as the preferred type map by default.
+            // Extract source schema information.
             var schemaTable = _reader.GetSchemaTable();
             int columnIndex = 0;
             foreach (DataRow row in schemaTable.Rows)
             {
+                // Default each source column's conversion to the data reader's schema table.
                 var map = new TypeConversionMap();
                 map.Source.ColumnName = row["ColumnName"].ToString();
-                map.Target.ColumnName = row["ColumnName"].ToString();
-                map.Source.DataTypeName = row["DataTypeName"].ToString().ToUpper();
-                map.Target.DataTypeName = row["DataTypeName"].ToString().ToUpper();
+                map.Source.DataType = Type.GetType(row["DataType"].ToString());
+                map.Source.DataTypeName = row["DataTypeName"].ToString();
                 map.Source.ColumnSize = Cast<int>(row["ColumnSize"]);
-                map.Target.ColumnSize = Cast<int>(row["ColumnSize"]);
                 map.Source.NumericPrecision = Cast<Int16>(row["NumericPrecision"]);
-                map.Target.NumericPrecision = Cast<Int16>(row["NumericPrecision"]);
                 map.Source.NumericScale = Cast<Int16>(row["NumericScale"]);
-                map.Target.NumericScale = Cast<Int16>(row["NumericScale"]);
                 map.Source.AllowNull = Cast<bool>(row["AllowDBNull"]);
-                map.Target.AllowNull = Cast<bool>(row["AllowDBNull"]);
                 map.TransportAsBinary = false;
-                
 
                 // If column names are missing, derive based on index.
                 if (map.Source.ColumnName == "")
                     map.Source.ColumnName = $"Column{columnIndex}";
-                if (map.Target.ColumnName == "")
-                    map.Target.ColumnName = $"Column{columnIndex}";
 
-                // If column uses special type, strip off namespace prefix and default to binary.
-                if (map.Source.DataTypeName.Contains("."))
-                {
-                    var dataTypeParts = map.Source.DataTypeName.Split('.');
-                    map.Source.DataTypeName = dataTypeParts[dataTypeParts.Length - 1];
-                    map.Target.DataTypeName = map.Source.DataTypeName;
-                    map.Source.DataType = typeof(object);
-                    map.Target.DataType = typeof(object);
-                }
-                else
-                {
-                    map.Source.DataType = Type.GetType(row["DataType"].ToString());
-                    map.Target.DataType = Type.GetType(row["DataType"].ToString());
-                }
+                map.Source.DataTypeName = StripNamespace(map.Source.DataTypeName);
 
+                // Default target to source (special conversion rules for target apply next).
+                map.Target = map.Source.Clone();
+
+                // Allow source, formatters, and target to apply their conversion (in that order).
                 Map(map, _source);
                 Map(map, _readFormatter);
                 Map(map, _writeFormatter);
@@ -111,8 +100,27 @@ namespace SyncTK.Internal
             }
         }
 
+        protected string StripNamespace(string typeName)
+        {
+            // If column uses a custom type, strip off namespace prefix and default to binary. This case occurs
+            // when types use assemblies as their type information.
+            if (typeName.Contains("."))
+            {
+                var dataTypeParts = typeName.Split('.');
+                return dataTypeParts[dataTypeParts.Length - 1];
+            }
+            else
+                return typeName;
+        }
+
+        protected string StripNamespace(Type type)
+        {
+            return StripNamespace(type.ToString());
+        }
+
         protected void Map(TypeConversionMap map, Component component)
         {
+            // Use reflection to invoke the concrete component's version of it's mapping logic (if exists).
             if (component != null)
             {
                 var componentType = component.GetType();
@@ -125,63 +133,164 @@ namespace SyncTK.Internal
         protected void MapSourceSqlServer(TypeConversionMap map)
         {
             // If a variable length and the size is "unlimited", force size to -1 which denotes unlimited.
-            if ((map.Source.DataTypeName.Contains("CHAR") || map.Source.DataTypeName.Contains("BINARY")) && map.Source.ColumnSize > 8000)
+            if ((map.Source.DataTypeName.ToUpper().Contains("CHAR") || map.Source.DataTypeName.ToUpper().Contains("BINARY")) && map.Source.ColumnSize > 8000)
             {
                 map.Source.ColumnSize = -1;
                 map.Target.ColumnSize = -1;
             }
 
-            // SQL Server special types (Geography, Geometry) require special assembly. However, if these are
-            // converted to BINARY the assembly isn't required and SQL will convert in target.
-            switch (map.Source.DataTypeName)
+            switch (map.Source.DataTypeName.ToUpper())
             {
+                case "TINYINT":
+                    map.Target.DataType = typeof(byte);
+                    break;
+                case "SMALLINT":
+                    map.Target.DataType = typeof(Int16);
+                    break;
+                case "INT":
+                    map.Target.DataType = typeof(Int32);
+                    break;
+                case "BIGINT":
+                    map.Target.DataType = typeof(Int64);
+                    break;
+                case "SMALLDATETIME":
+                case "DATETIME2":
+                case "DATETIME":
+                    map.Target.DataType = typeof(DateTimeOffset);
+                    break;
+                case "UNIQUEIDENTIFIER":
+                    map.Target.DataType = typeof(string);
+                    break;
+                case "TIME":
+                    map.Target.DataType = typeof(DateTimeOffset);
+                    break;
+                case "SQL_VARIANT":
+                    map.Target.DataType = typeof(string);
+                    break;
+                case "REAL":
+                    map.Target.DataType = typeof(double);
+                    break;
+                case "MONEY":
+                case "SMALLMONEY":
+                    map.Target.DataType = typeof(float);
+                    break;
+                case "NUMERIC":
+                    map.Target.DataType = typeof(double);
+                    break;
+                // SQL Server special types (Geography, Geometry) require special assembly. However, if these are
+                // converted to BINARY the assembly isn't required and SQL will convert in target.
                 case "GEOGRAPHY":
                 case "GEOMETRY":
                 case "HIERARCHYID":
+                    map.Target.DataType = typeof(byte[]);
                     map.TransportAsBinary = true;
                     break;
             }
+
+            map.Target.DataTypeName = StripNamespace(map.Target.DataType);      // derive type name off actual type.
         }
 
         protected void MapTargetSqlServer(TypeConversionMap map)
         {
-            switch (map.Source.DataTypeName)
+            // If the source is also SQL Server, use original source type information as target.
+            if (_source is SourceSqlServer)
             {
-                // .NET strings convert to NVARCHAR(MAX).
-                case "STRING":
-                    map.Target.DataTypeName = "NVARCHAR";
-                    map.Target.ColumnSize = -1;
-                    break;
-                case "BYTE":
-                    map.Target.DataTypeName = "TINYINT";
-                    break;
-                case "INT16":
-                    map.Target.DataTypeName = "SMALLINT";
-                    break;
-                case "INT32":
-                    map.Target.DataTypeName = "INT";
-                    break;
-                case "INT64":
-                    map.Target.DataTypeName = "BIGINT";
-                    break;
-                case "DOUBLE":
-                    map.Target.DataTypeName = "BIGINT";
-                    break;
+                map.Target = map.Source;
+            }
+            else
+            {
+                switch (map.Target.DataTypeName.ToUpper())
+                {
+                    // .NET strings convert to NVARCHAR(MAX).
+                    case "STRING":
+                        map.Target.DataTypeName = "NVARCHAR";
+                        map.Target.ColumnSize = -1;
+                        break;
+                    case "BYTE":
+                        map.Target.DataTypeName = "TINYINT";
+                        break;
+                    case "SHORT":
+                    case "INT16":
+                        map.Target.DataTypeName = "SMALLINT";
+                        break;
+                    case "INT32":
+                        map.Target.DataTypeName = "INT";
+                        break;
+                    case "INT64":
+                        map.Target.DataTypeName = "BIGINT";
+                        break;
+                    case "DOUBLE":
+                        map.Target.DataTypeName = "DECIMAL";
+                        break;
+                    case "SINGLE":
+                        map.Target.DataTypeName = "FLOAT";
+                        break;
+                    case "BYTE[]":
+                        map.Target.DataTypeName = "VARBINARY";
+                        break;
+                    default:
+                        break;
+                }
+
             }
         }
 
         protected void MapReadParquet(TypeConversionMap map)
         {
-            switch (map.Source.DataTypeName)
+            switch (map.Source.DataTypeName.ToUpper())
             {
+                case ("DATETIMEOFFSET"):
+                    map.Target.DataType = typeof(DateTimeOffset);
+                    break;
                 case "DECIMAL":
-                    map.Source.NumericPrecision = 38;
-                    map.Source.NumericScale = 18;
-                    map.Source.ColumnSize = 16;
+                    map.Target.DataType = typeof(decimal);
+                    map.Target.NumericPrecision = 38;
+                    map.Target.NumericScale = 18;
+                    map.Target.ColumnSize = 16;
+                    break;
+                case "DOUBLE":
+                    map.Target.DataType = typeof(double);
+                    map.Target.ColumnSize = sizeof(double);
+                    map.Target.NumericPrecision = 38;
+                    map.Target.NumericScale = 18;
+                    break;
+                case "SINGLE":
+                case "FLOAT":
+                    map.Target.DataType = typeof(float);
+                    map.Target.ColumnSize = sizeof(float);
+                    break;
+                case "STRING":
+                    map.Target.DataType = typeof(string);
+                    break;
+                case "UNSIGNEDSHORT":
+                    map.Target.DataType = typeof(ushort);
+                    map.Target.ColumnSize = sizeof(ushort);
+                    break;
+                case "SHORT":
+                case "INT16":
+                    map.Target.DataType = typeof(Int16);
+                    map.Target.ColumnSize = sizeof(Int16);
+                    break;
+                case "INT32":
+                    map.Target.DataType = typeof(Int32);
+                    map.Target.ColumnSize = sizeof(Int32);
+                    break;
+                case "INT64":
+                    map.Target.DataType = typeof(Int64);
+                    map.Target.ColumnSize = sizeof(Int64);
+                    break;
+                case "BOOLEAN":
+                    map.Target.DataType = typeof(bool);
+                    map.Target.ColumnSize = sizeof(bool);
+                    break;
+                case "BYTEARRAY":
+                    map.Target.DataType = typeof(byte[]);
                     break;
                 default:
                     break;
             }
+
+            map.Target.DataTypeName = StripNamespace(map.Target.DataType);      // derive type name off actual type.
         }
 
         protected void MapWriteParquet(TypeConversionMap map)
@@ -190,36 +299,66 @@ namespace SyncTK.Internal
             if (map.TransportAsBinary)
             {
                 map.Target.DataType = typeof(byte[]);
-                map.Target.DataTypeName = "System.Byte[]";
             }
 
-            // Specific type conversions.
-            switch (map.Source.DataTypeName)
+            map.Target.DataTypeName = StripNamespace(map.Target.DataType);      // derive type name off actual type.
+
+            switch (map.Target.DataTypeName.ToUpper())
             {
-                // Parquet defaults to using DateTimeOffset over DateTime.
-                case "SMALLDATETIME":
-                case "DATETIME2":
-                case "DATETIME":
-                    map.Target.DataType = typeof(DateTimeOffset);
-                    map.Target.DataTypeName = "DateTimeOffset";
+                case "SBYTE":
+                    map.Target.DataTypeName = "SignedByte";
+                    map.Target.DataType = typeof(sbyte);
                     break;
-                // Parquest doesn't support GUID, but that's easily converted to a string.
-                case "UNIQUEIDENTIFIER":
-                case "GUID":
-                    map.Target.DataType = typeof(string);
-                    map.Target.DataTypeName = "STRING";
+                case "USHORT":
+                    map.Target.DataTypeName = "UnsignedShort";
+                    map.Target.DataType = typeof(ushort);
                     break;
-                case "TIME":
-                    map.Target.DataType = typeof(DateTimeOffset);
-                    map.Target.DataTypeName = "DateTimeOffset";
+                case "BYTE":        // Parquet.NET's UnsignedByte throws runtime error, and their Byte is signed, so upconvert to short
+                case "INT16":
+                case "SHORT":
+                    map.Target.DataTypeName = "Short";
+                    map.Target.DataType = typeof(short);
                     break;
-                case "SQL_VARIANT":
-                    map.Target.DataType = typeof(string);
-                    map.Target.DataTypeName = "STRING";
+                case "FLOAT":
+                case "SINGLE":
+                    map.Target.DataTypeName = "Float";
+                    map.Target.DataType = typeof(float);
+                    break;
+                case "BYTE[]":
+                    map.Target.DataTypeName = "ByteArray";
+                    map.Target.DataType = typeof(byte[]);
                     break;
                 default:
                     break;
             }
+
+            // Specific type conversions.
+            //switch (map.Source.DataTypeName)
+            //{
+            //    // Parquet defaults to using DateTimeOffset over DateTime.
+            //    case "SMALLDATETIME":
+            //    case "DATETIME2":
+            //    case "DATETIME":
+            //        map.Target.DataType = typeof(DateTimeOffset);
+            //        map.Target.DataTypeName = "DateTimeOffset";
+            //        break;
+            //    // Parquest doesn't support GUID, but that's easily converted to a string.
+            //    case "UNIQUEIDENTIFIER":
+            //    case "GUID":
+            //        map.Target.DataType = typeof(string);
+            //        map.Target.DataTypeName = "STRING";
+            //        break;
+            //    case "TIME":
+            //        map.Target.DataType = typeof(DateTimeOffset);
+            //        map.Target.DataTypeName = "DateTimeOffset";
+            //        break;
+            //    case "SQL_VARIANT":
+            //        map.Target.DataType = typeof(string);
+            //        map.Target.DataTypeName = "STRING";
+            //        break;
+            //    default:
+            //        break;
+            //}
         }
 
         protected T Cast<T>(object value)

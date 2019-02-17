@@ -97,18 +97,19 @@ namespace SyncTK
             string columnSQL = "";
             foreach (var c in GetTypeConversionTable())
             {
+                var dataTypeName = c.Target.DataTypeName.ToUpper();
                 columnSQL +=
-                    $"[{c.Target.ColumnName}] [" + c.Target.DataTypeName + "] "
+                    $"[{c.Target.ColumnName}] [" + dataTypeName + "] "
                     + ""
-                    + Util.IIF(c.Target.DataTypeName.Contains("CHAR") && c.Target.ColumnSize == -1, "(MAX)")
-                    + Util.IIF(c.Target.DataTypeName.Contains("CHAR") && c.Target.ColumnSize > 0, $"({c.Target.ColumnSize.ToString()})")
-                    + Util.IIF(c.Target.DataTypeName == "DECIMAL", $"({c.Target.NumericPrecision.ToString()}, {c.Target.NumericScale.ToString()})")
-                    + Util.IIF(c.Target.DataTypeName == "NUMERIC", $"({c.Target.NumericPrecision.ToString()}, {c.Target.NumericScale.ToString()})")
-                    + Util.IIF(c.Target.DataTypeName.Contains("BINARY") && c.Target.ColumnSize == -1, "MAX")
-                    + Util.IIF(c.Target.DataTypeName.Contains("BINARY") && c.Target.ColumnSize > 0, $"({c.Target.ColumnSize.ToString()})")
-                    + Util.IIF(c.Target.DataTypeName == "DATETIME2", $"({c.Target.NumericScale.ToString()})")
+                    + Util.IIF(dataTypeName.Contains("CHAR") && c.Target.ColumnSize == -1, "(MAX)")
+                    + Util.IIF(dataTypeName.Contains("CHAR") && c.Target.ColumnSize > 0, $"({c.Target.ColumnSize.ToString()})")
+                    + Util.IIF(dataTypeName == "DECIMAL", $"({c.Target.NumericPrecision.ToString()}, {c.Target.NumericScale.ToString()})")
+                    + Util.IIF(dataTypeName == "NUMERIC", $"({c.Target.NumericPrecision.ToString()}, {c.Target.NumericScale.ToString()})")
+                    + Util.IIF(dataTypeName.Contains("BINARY") && c.Target.ColumnSize == -1, "(MAX)")
+                    + Util.IIF(dataTypeName.Contains("BINARY") && c.Target.ColumnSize > 0, $"({c.Target.ColumnSize.ToString()})")
+                    + Util.IIF(dataTypeName == "DATETIME2", $"({c.Target.NumericScale.ToString()})")
                     + ""
-                    + Util.IIF(c.Target.AllowNull, "NULL", "NOT NULL")
+                    + Util.IIF(c.Target.AllowNull, " NULL", " NOT NULL")
                     + ",";
             }
 

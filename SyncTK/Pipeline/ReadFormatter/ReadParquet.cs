@@ -32,81 +32,12 @@ namespace SyncTK
                 var columnSchema = new ColumnSchema()
                 {
                     ColumnName = _pqDataFields[i].Name,
+                    DataTypeName = _pqDataFields[i].DataType.ToString(),
                     ColumnSize = -1,
                     NumericPrecision = -1,
                     NumericScale = -1,
                     AllowNull = _pqDataFields[i].HasNulls
                 };
-
-                // Try to extract additional details about the type.
-                switch (_pqDataFields[i].DataType.ToString().ToUpper())
-                {
-                    case ("DATETIMEOFFSET"):
-                        columnSchema.DataType = typeof(DateTimeOffset);
-                        break;
-
-                    case ("DECIMALDATAFIELD"):
-                        columnSchema.DataType = typeof(decimal);
-                        columnSchema.ColumnSize = sizeof(decimal);
-                        columnSchema.NumericPrecision = (short)((Parquet.Data.DecimalDataField)_pqDataFields[i]).Precision;
-                        columnSchema.NumericScale = (short)((Parquet.Data.DecimalDataField)_pqDataFields[i]).Scale;
-                        break;
-
-                    case ("DECIMAL"):
-                        columnSchema.DataType = typeof(decimal);
-                        columnSchema.ColumnSize = sizeof(decimal);
-                        columnSchema.NumericPrecision = 38;
-                        columnSchema.NumericScale = 18;
-                        break;
-
-                    case ("FLOAT"):
-                        columnSchema.DataType = typeof(float);
-                        columnSchema.ColumnSize = sizeof(float);
-                        break;
-
-                    case ("STRING"):
-                        columnSchema.DataType = typeof(string);
-                        break;
-
-                    case ("BYTE"):
-                        columnSchema.DataType = typeof(byte);
-                        columnSchema.ColumnSize = sizeof(byte);
-                        break;
-
-                    case ("SHORT"):
-                        columnSchema.DataType = typeof(short);
-                        columnSchema.ColumnSize = sizeof(short);
-                        break;
-
-                    case ("INT32"):
-                        columnSchema.DataType = typeof(Int32);
-                        columnSchema.ColumnSize = sizeof(Int32);
-                        break;
-
-                    case ("INT64"):
-                        columnSchema.DataType = typeof(Int64);
-                        columnSchema.ColumnSize = sizeof(Int64);
-                        break;
-
-                    case ("DOUBLE"):
-                        columnSchema.DataType = typeof(double);
-                        columnSchema.ColumnSize = sizeof(double);
-                        break;
-
-                    case ("BOOLEAN"):
-                        columnSchema.DataType = typeof(bool);
-                        columnSchema.ColumnSize = sizeof(bool);
-                        break;
-
-                    case ("BYTEARRAY"):
-                        columnSchema.DataType = typeof(byte[]);
-                        break;
-
-                    default:
-                        throw new Exception($"Unknown Parquet type {_pqDataFields[i].DataType.ToString()}");
-                }
-                
-                columnSchema.DataTypeName = columnSchema.DataType.Name;
 
                 _columnSchema.Add(columnSchema);
             }
