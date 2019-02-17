@@ -6,35 +6,25 @@ namespace SyncTK.Test.UnitTests
 {
     public class AzureTests : TestBase
     {
-        //[Fact]
-        //public void BlobToTSV()
-        //{
-        //    new Pipeline()
-        //        .From(new SourceWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "Employee"))
-        //        .ReadFormat(new ReadParquet())
-        //        .WriteFormat(new WriteParquet())
-        //        .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\BlobToTSV_*.txt"))
-        //        .Exec();
-        //}
-
         [Fact]
-        public void SQLToBlobParquetSimple()
+        public void DBToWASBParquetComplex()
         {
             new Pipeline()
-                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", "SELECT TOP 1000000 t.* FROM sys.objects t CROSS APPLY sys.objects a CROSS APPLY sys.objects b CROSS APPLY sys.objects c"))
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
                 .WriteFormat(new WriteParquet())
-                .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\SQLToBlobParquetSimple_*.parquet"))
+                .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\DBToWASBParquetComplex*.parquet"))
                 .Exec();
         }
 
         [Fact]
-        public void SQLToBlobParquetLarge()
+        public void DBToWASBTSVComplex()
         {
             new Pipeline()
-                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", $"{SqlServerTests.QUERY_ALL_TYPES} CROSS APPLY sys.objects a"))
-                .WriteFormat(new WriteParquet())
-                .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\SQLToBlobParquetLarge_*.parquet"))
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
+                .WriteFormat(new WriteTSV())
+                .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\DBToWASBTSVComplex*.parquet"))
                 .Exec();
         }
+
     }
 }

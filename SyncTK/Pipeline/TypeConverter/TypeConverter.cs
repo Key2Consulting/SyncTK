@@ -152,6 +152,35 @@ namespace SyncTK.Internal
                     map.Target.DataTypeName = "NVARCHAR";
                     map.Target.ColumnSize = -1;
                     break;
+                case "BYTE":
+                    map.Target.DataTypeName = "TINYINT";
+                    break;
+                case "INT16":
+                    map.Target.DataTypeName = "SMALLINT";
+                    break;
+                case "INT32":
+                    map.Target.DataTypeName = "INT";
+                    break;
+                case "INT64":
+                    map.Target.DataTypeName = "BIGINT";
+                    break;
+                case "DOUBLE":
+                    map.Target.DataTypeName = "BIGINT";
+                    break;
+            }
+        }
+
+        protected void MapReadParquet(TypeConversionMap map)
+        {
+            switch (map.Source.DataTypeName)
+            {
+                case "DECIMAL":
+                    map.Source.NumericPrecision = 38;
+                    map.Source.NumericScale = 18;
+                    map.Source.ColumnSize = 16;
+                    break;
+                default:
+                    break;
             }
         }
 

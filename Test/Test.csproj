@@ -8,6 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\SqlServerComplex.sql" />
+    <None Remove="Resources\SqlServerSimple.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\SqlServerSimple.sql" />
+    <EmbeddedResource Include="Resources\SqlServerComplex.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SyncTK\SyncTK.csproj" />
   </ItemGroup>
 

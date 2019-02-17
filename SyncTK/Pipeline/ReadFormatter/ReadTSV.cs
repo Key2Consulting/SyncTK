@@ -14,6 +14,10 @@ namespace SyncTK
         protected string _firstLine;
         protected string _line;
 
+        public ReadTSV() : this(true)
+        {
+        }
+
         public ReadTSV(bool header)
         {
             _header = header;

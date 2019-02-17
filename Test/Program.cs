@@ -18,9 +18,10 @@ namespace SyncTK.Test
             // Test Execution
             var runner = new Runner();
             string[] tests = {
+                "SyncTK.Test.UnitTests.GenerateSampleFiles",
                 "SyncTK.Test.UnitTests.FileTests",
                 "SyncTK.Test.UnitTests.SqlServerTests",
-                "SyncTK.Test.UnitTests.AzureTests"
+                //"SyncTK.Test.UnitTests.AzureTests"
             };
             var r = runner.Run(tests);
 
@@ -28,10 +29,8 @@ namespace SyncTK.Test
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Test Complete.");
 
-            if (r != 0)
-                Console.ReadKey();
-            else
-                System.Threading.Thread.Sleep(1500);
+            Console.ReadKey();
+            // System.Threading.Thread.Sleep(1500);
 
             // Global Teardown
             GlobalTearDown();

@@ -73,7 +73,7 @@ namespace SyncTK
                 var map = GetTypeConversionTable()[i];
                 _buffer.Add(new ArrayList(_rowGroupRowLimit));
                 _dataTypes.Add(map.Target.DataType);
-                _pqDataFields.Add(new Parquet.Data.DataField(map.Target.ColumnName, GetNullableType(map.Target.DataType)));
+                _pqDataFields.Add(new Parquet.Data.DataField(map.Target.ColumnName, Util.GetNullableType(map.Target.DataType)));
             }
 
             _pqSchema = new Parquet.Data.Schema(_pqDataFields);
@@ -117,8 +117,7 @@ namespace SyncTK
             for (int i = 0; i < _reader.FieldCount; i++)
             {
                 var data = _buffer[i];
-                var dataType = GetTypeConversionTable()[i].Target.DataType;
-                var toType = GetNullableType(dataType);
+                var toType = Util.GetNullableType(GetTypeConversionTable()[i].Target.DataType);
                 var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(toType));
                 _pqDataColumns.Add(pqCol);
             }
@@ -140,49 +139,6 @@ namespace SyncTK
                 b.Clear();
             }
             _rowGroupWriteCount = 0;
-        }
-
-        //// https://stackoverflow.com/questions/108104/how-do-i-convert-a-system-type-to-its-nullable-version
-        //Type GetNullableType(Type type)
-        //{
-        //    // Use Nullable.GetUnderlyingType() to remove the Nullable<T> wrapper if type is already nullable.
-        //    var underlyingType = Nullable.GetUnderlyingType(type);
-        //    if (underlyingType != null && underlyingType.IsValueType)
-        //        return typeof(Nullable<>).MakeGenericType(underlyingType);
-        //    else
-        //        return type;
-        //}
-        protected Type GetNullableType(Type TypeToConvert)
-        {
-            // Abort if no type supplied
-            if (TypeToConvert == null)
-                return null;
-
-            // If the given type is already nullable, just return it
-            if (IsTypeNullable(TypeToConvert))
-                return TypeToConvert;
-
-            // If the type is a ValueType and is not System.Void, convert it to a Nullable<Type>
-            if (TypeToConvert.IsValueType && TypeToConvert != typeof(void))
-                return typeof(Nullable<>).MakeGenericType(TypeToConvert);
-
-            // Done - no conversion
-            return null;
-        }
-
-        protected bool IsTypeNullable(Type TypeToTest)
-        {
-            // Abort if no type supplied
-            if (TypeToTest == null)
-                return false;
-
-            // If this is not a value type, it is a reference type, so it is automatically nullable
-            //  (NOTE: All forms of Nullable<T> are value types)
-            if (!TypeToTest.IsValueType)
-                return true;
-
-            // Report whether TypeToTest is a form of the Nullable<> type
-            return TypeToTest.IsGenericType && TypeToTest.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
     }
 }

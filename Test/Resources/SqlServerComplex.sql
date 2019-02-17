@@ -1,0 +1,36 @@
+﻿SELECT TOP {0}
+    NEWID() [UniqueIdentifier]
+    ,CAST(200 AS TINYINT) [TinyInt]
+    ,CAST(-20000 AS SMALLINT) [SmallInt]
+    ,CAST(2000000000 AS INT) [Int]
+    ,CAST(2000000000000000000 AS BIGINT) [BigInt]
+    ,CAST(1.2345 AS FLOAT) [Float]
+    ,CAST(1.2345 AS DECIMAL(38,17)) [Decimal]
+    ,CAST(1.2345 AS NUMERIC(6, 3)) [Numeric]
+    ,CAST(1.2345 AS REAL) [Real]
+    ,geography::Point(47.65100, -122.34900, 4326) [Geography]
+    ,geometry::STGeomFromText('LINESTRING (100 100, 20 180, 180 180)', 0) [Geometry]
+    ,CAST('<xml><hello>world</hello></xml>' AS XML) [Xml]
+    ,CAST('Hello World' AS VARBINARY(100)) [VarBinary]
+    ,CAST('Hello World' AS BINARY(100)) [Binary]
+    ,CAST(GETDATE() AS DATETIME) [DateTime]
+    ,CAST(GETDATE() AS SMALLDATETIME) [SmallDateTime]
+    ,CAST(GETDATE() AS DATETIME2) [DateTime2]
+    ,CAST(GETDATE() AS DATETIMEOFFSET) [DateTimeOffset]
+    ,CAST(GETDATE() AS TIME) [Time]
+    ,CAST('/1/' AS HIERARCHYID) [HierarchyID]
+    ,CAST(12.99 AS SMALLMONEY) [SmallMoney]
+    ,CAST(12.99 AS MONEY) [Money]
+    ,CAST(GETDATE() AS TIMESTAMP) [TimeStamp]
+    ,'No Column Name'
+    ,CAST('This is a String' AS VARCHAR(100)) [VarChar]
+	,CAST(REPLICATE('Hello world, ', {1})  AS VARCHAR(MAX)) [VarCharMax]
+    ,CAST('This is a String' AS CHAR(100)) [Char]
+    ,CAST('This is a String' AS NVARCHAR(100)) [NVarChar]
+    ,CAST('This is a String' AS NCHAR(100)) [NChar]
+    ,CAST('This is a String' AS TEXT) [Text]
+    ,CAST('This is a String' AS SQL_VARIANT) [Variant]
+FROM sys.objects t
+CROSS APPLY sys.objects a
+CROSS APPLY sys.objects b
+CROSS APPLY sys.objects c
