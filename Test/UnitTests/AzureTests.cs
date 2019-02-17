@@ -22,7 +22,7 @@ namespace SyncTK.Test.UnitTests
             new Pipeline()
                 .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
                 .WriteFormat(new WriteTSV())
-                .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\DBToWASBTSVComplex*.parquet"))
+                .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\DBToWASBTSVComplex*.txt"))
                 .Exec();
         }
 
