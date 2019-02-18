@@ -115,21 +115,25 @@ namespace SyncTK
 
         protected void FlushRowGroup()
         {
-            _pqDataColumns = new List<Parquet.Data.DataColumn>();
-            for (int i = 0; i < _reader.FieldCount; i++)
+            // Ensure we have at least one row before creating a new rowgroup (can happen when _rowGroupRowLimit ends on the last record).
+            if (_rowGroupWriteCount > 0)
             {
-                var data = _buffer[i];
-                var toType = Util.GetNullableType(GetTypeConversionTable()[i].Target.DataType);
-                var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(toType));
-                _pqDataColumns.Add(pqCol);
-            }
-
-            // Create a new row group in the file.
-            using (ParquetRowGroupWriter groupWriter = _pqWriter.CreateRowGroup())
-            {
-                foreach (var pqDataColumn in _pqDataColumns)
+                _pqDataColumns = new List<Parquet.Data.DataColumn>();
+                for (int i = 0; i < _reader.FieldCount; i++)
                 {
-                    groupWriter.WriteColumn(pqDataColumn);
+                    var data = _buffer[i];
+                    var toType = Util.GetNullableType(GetTypeConversionTable()[i].Target.DataType);
+                    var pqCol = new Parquet.Data.DataColumn(_pqDataFields[i], data.ToArray(toType));
+                    _pqDataColumns.Add(pqCol);
+                }
+
+                // Create a new row group in the file.
+                using (ParquetRowGroupWriter groupWriter = _pqWriter.CreateRowGroup())
+                {
+                    foreach (var pqDataColumn in _pqDataColumns)
+                    {
+                        groupWriter.WriteColumn(pqDataColumn);
+                    }
                 }
             }
 

@@ -86,13 +86,13 @@ namespace SyncTK
             // Pipeline Validation
             foreach (var currentComponent in _component)
             {
-                currentComponent.Validate(this);
+                currentComponent.Validate();
             }
 
             // Pipeline Begin
             foreach (var currentComponent in _component)
             {
-                currentComponent.Begin(this);
+                currentComponent.Begin();
             }
 
             // Pipeline Process
@@ -100,14 +100,14 @@ namespace SyncTK
             IEnumerable<object> currentOutput = null;
             foreach (var currentComponent in _component)
             {
-                currentOutput = currentComponent.Process(this, previousOutput);
+                currentOutput = currentComponent.Process(previousOutput);
                 previousOutput = currentOutput;
             }
 
             // Pipeline End
             foreach (var currentComponent in _component)
             {
-                currentComponent.End(this);
+                currentComponent.End();
             }
         }
 

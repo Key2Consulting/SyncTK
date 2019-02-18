@@ -25,7 +25,7 @@ namespace SyncTK
             _paths.AddRange(paths);
         }
 
-        internal override void Validate(Pipeline pipeline)
+        internal override void Validate()
         {
             // For every path we're loading.
             foreach (var path in _paths)
@@ -44,9 +44,11 @@ namespace SyncTK
                 _rootPaths.Add(rootPath);
                 _fileNames.Add(fileName);
             }
+
+            Assert(GetDownstreamComponent() is ReadFormatter, "Pipeline is missing a ReadFormatter.");
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             // For every path we're loading.
             for (int i = 0; i < _rootPaths.Count; i++)
@@ -72,7 +74,7 @@ namespace SyncTK
             }
         }
 
-        internal override void End(Pipeline pipeline)
+        internal override void End()
         {
             foreach (var reader in _streamReaders)
             {

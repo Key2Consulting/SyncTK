@@ -27,11 +27,11 @@
 //            _blobName = blobName;
 //        }
 
-//        internal override void Validate(Pipeline pipeline)
+//        internal override void Validate()
 //        {
 //        }
 
-//        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+//        internal override IEnumerable<object> Process(IEnumerable<object> input)
 //        {
 //            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_connectionString);
 //            var blobClient = storageAccount.CreateCloudBlobClient();
@@ -48,7 +48,7 @@
 //            }
 //        }
 
-//        internal override void End(Pipeline pipeline)
+//        internal override void End()
 //        {
 //            foreach (var reader in _streamReaders)
 //            {

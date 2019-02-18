@@ -19,20 +19,21 @@ namespace SyncTK
             _path = path;
         }
 
-        internal override void Validate(Pipeline pipeline)
+        internal override void Validate()
         {
-            var upstream = (WriteFormatter)GetUpstreamComponent(pipeline);
+            var upstream = (WriteFormatter)GetUpstreamComponent();
             Assert(upstream._fileRowLimit == 0 || _path.Contains("*"), "Splitting output files requires use of wildcard character * in the path.");
+            Assert(GetUpstreamComponent() is WriteFormatter, "Pipeline is missing a WriteFormatter.");
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             // Remaining processing is expected to be handled by converter.
             Assert(input == null, "Unexpected stream sent to TargetFile.");
             return null;
         }
 
-        internal override void End(Pipeline pipeline)
+        internal override void End()
         {
             // Dispose of last writer
             if (_streamWriter != null)

@@ -10,7 +10,15 @@ namespace SyncTK.Test.UnitTests
 {
     public class TestBase
     {
+        protected int _sampleFileCount;
+        protected int _dataSetSize;
         protected JObject _cfg = null;
+
+        public TestBase()
+        {
+            _sampleFileCount = int.Parse(GetConfig("SampleFileCount"));
+            _dataSetSize = int.Parse(GetConfig("DataSetSize"));
+        }
 
         public string GetConfig(string configKey)
         {

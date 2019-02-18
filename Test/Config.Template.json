@@ -1,0 +1,9 @@
+{
+  "SQLServer": "Server\\OptionalInstanceName",
+  "TempFilesRoot": "PathToTestProjectTempFilesLocation",
+  "AzureBlobConnectionString": "ConnectionStringForAzureBlobStorage",
+  "AzureBlobContainer": "ContainerNameToStoreBlobs",
+  "DataSetSize": 1000,
+  "SampleFileCount": 3,
+  "BigStringSize": 100
+}

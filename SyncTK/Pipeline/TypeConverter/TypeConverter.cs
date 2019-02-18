@@ -36,12 +36,12 @@ namespace SyncTK.Internal
             _target = target;
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             // Get our input explicitly via the input parameter, or implicitly via the upstream component.
             if (input == null)
             {
-                _reader = (IDataReader)GetUpstreamComponent(pipeline);
+                _reader = (IDataReader)GetUpstreamComponent();
                 CreateTypeConversionTable();
                 yield return this;
             }

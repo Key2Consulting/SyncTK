@@ -14,20 +14,20 @@ namespace SyncTK.Internal
         {
         }
 
-        internal virtual void Begin(Pipeline pipeline)
+        internal virtual void Begin()
         {
         }
 
-        internal virtual void End(Pipeline pipeline)
+        internal virtual void End()
         {
         }
 
-        internal virtual IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal virtual IEnumerable<object> Process(IEnumerable<object> input)
         {
             throw new NotImplementedException();
         }
 
-        internal virtual void Validate(Pipeline pipeline)
+        internal virtual void Validate()
         {
         }
 
@@ -44,19 +44,19 @@ namespace SyncTK.Internal
             return System.DateTime.Now.ToString("yyyyMMdd_mmssfff");
         }
 
-        protected Component GetUpstreamComponent(Pipeline pipeline)
+        protected Component GetUpstreamComponent()
         {
-            var currentIndex = pipeline._component.IndexOf(this);
+            var currentIndex = _pipeline._component.IndexOf(this);
             if (currentIndex > 0)
-                return pipeline._component[currentIndex - 1];
+                return _pipeline._component[currentIndex - 1];
             return null;
         }
 
-        protected Component GetDownstreamComponent(Pipeline pipeline)
+        protected Component GetDownstreamComponent()
         {
-            var currentIndex = pipeline._component.IndexOf(this);
-            if (currentIndex < pipeline._component.Count - 1)
-                return pipeline._component[currentIndex + 1];
+            var currentIndex = _pipeline._component.IndexOf(this);
+            if (currentIndex < _pipeline._component.Count - 1)
+                return _pipeline._component[currentIndex + 1];
             return null;
         }
 

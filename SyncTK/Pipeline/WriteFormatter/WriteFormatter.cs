@@ -23,17 +23,17 @@ namespace SyncTK.Internal
             _fileRowLimit = fileRowLimit;
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             // Unlike other pipeline components, converters must initialize/coordinate with the downstream
             // component to create the output stream e.g. files.
-            _target = (TargetFile)GetDownstreamComponent(pipeline);
+            _target = (TargetFile)GetDownstreamComponent();
 
             // Get our input explicitly via the input parameter, or implicitly via the upstream component.
             if (input == null)
             {
                 // Upstream component must support the IDataReader interface.
-                _reader = (IDataReader)GetUpstreamComponent(pipeline);
+                _reader = (IDataReader)GetUpstreamComponent();
                 ProcessInput();
             }
             else

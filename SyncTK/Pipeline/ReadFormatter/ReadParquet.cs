@@ -43,7 +43,19 @@ namespace SyncTK
             }
         }
 
-        protected override bool OnReadLine()
+        protected override void OnBeginFile()
+        {
+            // Switching to a new input file, so reset our read variables.
+            var options = new Parquet.ParquetOptions();
+            _pqReader = new Parquet.ParquetReader(_reader.BaseStream);
+            _pqDataFields = _pqReader.Schema.GetDataFields();
+            _rowGroupIndex = 0;
+            _rowGroupReadCount = 0;
+            _rowGroupRowCount = 0;
+
+    }
+
+    protected override bool OnReadLine()
         {
             bool hasData = true;
 
@@ -58,6 +70,10 @@ namespace SyncTK
                 _pqDataColumn = _pqReader.ReadEntireRowGroup(_rowGroupIndex++);
                 _rowGroupRowCount = _pqDataColumn[0].Data.Length;
                 _rowGroupReadCount = 0;
+
+                // If we encounter an empty rowgroup, must have been added by mistake.
+                if (_rowGroupRowCount == 0)
+                    hasData = false;
             }
             else
             {

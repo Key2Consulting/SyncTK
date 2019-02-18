@@ -21,7 +21,7 @@ namespace SyncTK.Internal
         {
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             _input = input.GetEnumerator();
 

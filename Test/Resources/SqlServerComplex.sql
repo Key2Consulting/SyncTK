@@ -1,8 +1,8 @@
 ﻿SELECT TOP {0}
-    NEWID() [UniqueIdentifier]
+	CAST(ROW_NUMBER() OVER(ORDER BY t.object_id) AS INT) [Int]
+    ,NEWID() [UniqueIdentifier]
     ,CAST(200 AS TINYINT) [TinyInt]
     ,CAST(-20000 AS SMALLINT) [SmallInt]
-    ,CAST(2000000000 AS INT) [Int]
     ,CAST(2000000000000000000 AS BIGINT) [BigInt]
     ,CAST(1.2345 AS FLOAT) [Float]
     ,CAST(1.2345 AS DECIMAL(38,17)) [Decimal]

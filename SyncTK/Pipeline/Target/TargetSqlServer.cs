@@ -43,13 +43,13 @@ namespace SyncTK
             _batchSize = batchSize;
         }
 
-        internal override void Validate(Pipeline pipeline)
+        internal override void Validate()
         {
-            var upstreamComponent = GetUpstreamComponent(pipeline);
-            Assert(pipeline.FindComponentType<WriteFormatter>() == null, "Cannot use write formatters with a database target.");
+            var upstreamComponent = GetUpstreamComponent();
+            Assert(_pipeline.FindComponentType<WriteFormatter>() == null, "Cannot use write formatters with a database target.");
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             using (_connection = new SqlConnection(GetConnectionString()))
             {
@@ -113,7 +113,7 @@ namespace SyncTK
                     + ",";
             }
 
-            var createSQL = $"CREATE TABLE [{_schema}].[{_table}]( {columnSQL} )";
+            var createSQL = $"CREATE TABLE [{_schema}].[{_table}]( {columnSQL} ) WITH (DATA_COMPRESSION = PAGE)";
             var dropSQL = _overwrite ? $"DROP TABLE IF EXISTS {_schema}].[{_table}]( {columnSQL} )" : "";
             var script = $"IF OBJECT_ID('[{_schema}].[{_table}]') IS NULL{Environment.NewLine}    {createSQL}";
 

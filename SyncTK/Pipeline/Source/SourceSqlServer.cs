@@ -44,7 +44,7 @@ namespace SyncTK
             _query = query;
         }
 
-        internal override IEnumerable<object> Process(Pipeline pipeline, IEnumerable<object> input)
+        internal override IEnumerable<object> Process(IEnumerable<object> input)
         {
             using (_connection = new SqlConnection(GetConnectionString()))
             {

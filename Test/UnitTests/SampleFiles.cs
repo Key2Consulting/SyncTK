@@ -6,63 +6,54 @@ namespace SyncTK.Test.UnitTests
 {
     public class GenerateSampleFiles : TestBase
     {
-        int _multipleFileCount;
+        int _maxRowsPerFile;
+        int _maxRowsPerRowGroup;
 
         public GenerateSampleFiles()
         {
-            _multipleFileCount = int.Parse(GetConfig("MultipleFileCount"));
+            _maxRowsPerFile = _dataSetSize / _sampleFileCount + _sampleFileCount;
+            _maxRowsPerRowGroup = _maxRowsPerFile / 3;
         }
 
         [Fact]
         public void GenerateTSVSimple()
         {
-            for (int i = 0; i < _multipleFileCount; i++)
-            {
-                new Pipeline()
-                    .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerSimple.sql")))
-                    .WriteFormat(new WriteTSV(true))
-                    .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVSimple{i}.txt"))
-                    .Exec();
-            }
+            new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerSimple.sql")))
+                .WriteFormat(new WriteTSV(true, _maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVSimple_*.txt"))
+                .Exec();
         }
 
         [Fact]
         public void GenerateTSVComplex()
         {
-            for (int i = 0; i < _multipleFileCount; i++)
-            {
-                new Pipeline()
-                    .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
-                    .WriteFormat(new WriteTSV(true))
-                    .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVComplex{i}.txt"))
-                    .Exec();
-            }
+            new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
+                .WriteFormat(new WriteTSV(true, _maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\TSVComplex_*.txt"))
+                .Exec();
         }
 
         [Fact]
         public void GenerateParquetSimple()
         {
-            for (int i = 0; i < _multipleFileCount; i++)
-            {
-                new Pipeline()
-                    .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerSimple.sql")))
-                    .WriteFormat(new WriteParquet())
-                    .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple{i}.parquet"))
-                    .Exec();
-            }
+            new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerSimple.sql")))
+                .WriteFormat(new WriteParquet(true, _maxRowsPerRowGroup, _maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple_*.parquet"))
+                .Exec();
         }
 
         [Fact]
         public void GenerateParquetComplex()
         {
-            for (int i = 0; i < _multipleFileCount; i++)
-            {
-                new Pipeline()
-                    .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
-                    .WriteFormat(new WriteParquet())
-                    .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex{i}.parquet"))
-                    .Exec();
-            }
+            new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
+                .WriteFormat(new WriteParquet(true, _maxRowsPerRowGroup, _maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex_*.parquet"))
+                .Exec();
+
         }
     }
 }
