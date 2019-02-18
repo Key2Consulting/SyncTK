@@ -346,3 +346,4 @@ healthchecksdb
 Temp*.*
 Test/TempFiles/*
 /Packaging/Python/pysynctk.egg-info
+/Test/Config.json
