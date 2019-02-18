@@ -19,9 +19,9 @@ namespace SyncTK.Test
             var runner = new Runner();
             string[] tests = {
                 "SyncTK.Test.UnitTests.GenerateSampleFiles",            // required for all other tests
-                // "SyncTK.Test.UnitTests.FileTests",
-                // "SyncTK.Test.UnitTests.SqlServerTests",
-                // "SyncTK.Test.UnitTests.AzureTests",
+                "SyncTK.Test.UnitTests.FileTests",
+                "SyncTK.Test.UnitTests.SqlServerTests",
+                "SyncTK.Test.UnitTests.AzureTests",
                 "SyncTK.Test.UnitTests.ScaleTests"
             };
             var r = runner.Run(tests);
@@ -42,7 +42,7 @@ namespace SyncTK.Test
         static void GlobalSetup()
         {
             // Cleanup Temp Files from Last Run
-            var cfg = new SyncTK.Test.UnitTests.TestBase();
+            var cfg = new SyncTK.Test.UnitTests.TestBase(null);
             System.IO.DirectoryInfo di = new DirectoryInfo(cfg.GetConfig("TempFilesRoot"));
             foreach (FileInfo file in di.GetFiles())
             {

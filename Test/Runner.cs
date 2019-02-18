@@ -41,6 +41,7 @@ namespace SyncTK.Test
                     runner.OnTestSkipped = OnTestSkipped;
                     runner.OnTestStarting = OnTestStarting;
                     runner.OnTestFinished = OnTestFinished;
+                    runner.OnTestOutput = OnTestOutput;
                     runner.Start(typeName);
 
                     finished.WaitOne();
@@ -99,7 +100,7 @@ namespace SyncTK.Test
             lock (consoleLock)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.Write($"{info.MethodName}...");
+                Console.Write($"{info.MethodName}");
                 Console.ResetColor();
             }
         }
@@ -109,7 +110,18 @@ namespace SyncTK.Test
             lock (consoleLock)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.WriteLine($"{Math.Round(info.ExecutionTime, 3)}s.");
+                Console.WriteLine($"...{Math.Round(info.ExecutionTime, 3)}s.");
+                Console.ResetColor();
+            }
+        }
+
+        static void OnTestOutput(TestOutputInfo info)
+        {
+            lock (consoleLock)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                string output = info.Output.Replace("\r\n", "");
+                Console.Write($"{output}");
                 Console.ResetColor();
             }
         }

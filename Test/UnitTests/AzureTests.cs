@@ -3,29 +3,34 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SyncTK.Test.UnitTests
 {
     public class AzureTests : TestBase
     {
+        public AzureTests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public void DBToWASBParquetComplex()
         {
-            new Pipeline()
+            WritePipelineOutput(new Pipeline()
                 .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
                 .WriteFormat(new WriteParquet())
                 .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\DBToWASBParquetComplex*.parquet"))
-                .Exec();
+                .Exec());
         }
 
         [Fact]
         public void DBToWASBTSVComplex()
         {
-            new Pipeline()
+            WritePipelineOutput(new Pipeline()
                 .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
                 .WriteFormat(new WriteTSV())
                 .Into(new TargetWASB(GetConfig("AzureBlobConnectionString"), GetConfig("AzureBlobContainer"), "SyncTKTest\\v1\\DBToWASBTSVComplex*.txt"))
-                .Exec();
+                .Exec());
         }
 
         [Fact]

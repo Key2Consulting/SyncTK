@@ -62,7 +62,7 @@ namespace SyncTK
             // If we still have rows left to read within the current rowgroup.
             if (_pqDataColumn != null && _rowGroupReadCount < _rowGroupRowCount)
             {
-                _readCount++;
+                _totalReadCount++;
             }
             else if (_rowGroupIndex < _pqReader.RowGroupCount)
             {

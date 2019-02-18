@@ -13,6 +13,7 @@ namespace SyncTK
         protected List<string> _paths = new List<string>();
         protected List<string> _rootPaths = new List<string>();
         protected List<string> _fileNames = new List<string>();
+        protected List<string> _inputFiles = new List<string>();
         protected List<StreamReader> _streamReaders = new List<StreamReader>();
 
         public SourceFile(string path)
@@ -60,6 +61,7 @@ namespace SyncTK
 
                     foreach (var item in paths)
                     {
+                        _inputFiles.Add(item);
                         var reader = new StreamReader(item);
                         yield return reader;
                     }
@@ -81,6 +83,10 @@ namespace SyncTK
                 reader.Close();
                 reader.Dispose();
             }
+
+            _pipeline.AddLog("TotalInputFiles", _inputFiles.Count);
+            foreach (var file in _inputFiles)
+                _pipeline.AddLog("InputFile", file);
         }
     }
 }

@@ -26,7 +26,7 @@ namespace SyncTK.Internal
         protected Target _target;
         protected IDataReader _reader;
         internal TypeConversionTable TypeConversionTable;
-        protected int _totalReadCount = 0;
+        internal int _totalReadCount = 0;
 
         internal TypeConverter(Source source, ReadFormatter readFormatter, WriteFormatter writeFormatter, Target target)
         {
@@ -54,6 +54,11 @@ namespace SyncTK.Internal
                     yield return this;
                 }
             }
+        }
+
+        internal override void End()
+        {
+            _pipeline.AddLog("Rows", _totalReadCount);
         }
 
         /// <summary>

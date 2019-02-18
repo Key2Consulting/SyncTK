@@ -8,12 +8,13 @@ namespace SyncTK
 {
     public class Pipeline
     {
-        #region Pipeline Components
         internal List<Component> _component = new List<Component>();
-        #endregion
+        public List<KeyValuePair<string, object>> Log = new List<KeyValuePair<string, object>>();
 
-        #region Default Component Properties
-        #endregion
+        public void AddLog(string key, object value)
+        {
+            Log.Add(new KeyValuePair<string, object>(key, value));
+        }
 
         #region Client Builder Interface
         public Pipeline From(Component connector)
@@ -52,7 +53,7 @@ namespace SyncTK
             return null;
         }
 
-        public void Exec()
+        public Pipeline Exec()
         {
             var source = FindComponentType<Source>();
             var readFormatter = FindComponentType<ReadFormatter>();
@@ -68,11 +69,11 @@ namespace SyncTK
             // Since moving data involves different types and type systems, always add
             // a TypeConverter to the pipeline which handles this translation. Always 
             // goes after the ReadFormatter (or Source if no ReadFormatter doesn't exist).
-            var converter = new TypeConverter(source, readFormatter, writeFormatter, target);
+            var typeConverter = new TypeConverter(source, readFormatter, writeFormatter, target);
             if (readFormatter != null)
-                _component.Insert(_component.IndexOf(readFormatter) + 1, converter);
+                _component.Insert(_component.IndexOf(readFormatter) + 1, typeConverter);
             else
-                _component.Insert(_component.IndexOf(source) + 1, converter);
+                _component.Insert(_component.IndexOf(source) + 1, typeConverter);
 
             // Ensure everyone has a reference back to the pipeline (this).
             foreach (var component in _component)
@@ -109,6 +110,8 @@ namespace SyncTK
             {
                 currentComponent.End();
             }
+
+            return this;
         }
 
         public Task ExecAsync()

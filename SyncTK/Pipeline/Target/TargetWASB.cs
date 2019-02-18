@@ -39,8 +39,9 @@ namespace SyncTK
 
             var newBlobName = _blobName.Replace("*", this.GetCurrentTimeStampToken() + _fileWriteNumber.ToString());
             var blob = _container.GetBlockBlobReference(newBlobName);
+            _outputFiles.Add(blob.Uri.ToString());
             _streamWriter = new StreamWriter(blob.OpenWrite());
-
+        
             return _streamWriter;
         }
     }

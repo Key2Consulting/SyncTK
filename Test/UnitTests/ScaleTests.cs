@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SyncTK.Test.UnitTests
 {
@@ -11,7 +12,7 @@ namespace SyncTK.Test.UnitTests
         int _maxRowsPerFile;
         int _maxRowsPerRowGroup;
 
-        public ScaleTests()
+        public ScaleTests(ITestOutputHelper output) : base(output)
         {
             _maxRowsPerFile = _dataSetSize / 5;                     // force 5 files to be created each test
             _maxRowsPerRowGroup = _maxRowsPerFile / 5;              // force 5 rowgroups per file (where applicable)
@@ -122,11 +123,11 @@ namespace SyncTK.Test.UnitTests
         [Fact]
         public void ParquetComplexDBAsync()
         {
-            new Pipeline()
+            WritePipelineOutput(new Pipeline()
                 .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex*.parquet"))
                 .ReadFormat(new ReadParquet())
                 .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "ParquetComplexDBAsync_ParquetComplex", true))
-                .Exec();
+                .Exec());
         }
     }
 }

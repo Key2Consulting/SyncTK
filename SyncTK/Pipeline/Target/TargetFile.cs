@@ -13,6 +13,7 @@ namespace SyncTK
         protected StreamWriter _streamWriter = null;
         protected string _path = "";
         protected int _fileCount = 0;
+        protected List<string> _outputFiles = new List<string>();
 
         public TargetFile(string path)
         {
@@ -40,6 +41,11 @@ namespace SyncTK
             {
                 _streamWriter.Dispose();
             }
+
+            // Output log information.
+            _pipeline.AddLog("TotalOutputFiles", _outputFiles.Count);
+            foreach (var file in _outputFiles)
+                _pipeline.AddLog("OutputFile", file);
         }
 
         internal virtual StreamWriter GetNextStreamWriter()
@@ -51,6 +57,7 @@ namespace SyncTK
             }
 
             var nextFilePath = _path.Replace("*", this.GetCurrentTimeStampToken() + "_" + _fileCount.ToString());
+            _outputFiles.Add(nextFilePath);
             _streamWriter = new StreamWriter(nextFilePath);
             _fileCount++;
 

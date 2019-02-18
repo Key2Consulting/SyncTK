@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Reflection;
+using Xunit.Abstractions;
 
 namespace SyncTK.Test.UnitTests
 {
@@ -13,9 +14,11 @@ namespace SyncTK.Test.UnitTests
         protected int _sampleFileCount;
         protected int _dataSetSize;
         protected JObject _cfg = null;
-
-        public TestBase()
+        protected readonly ITestOutputHelper _output;
+        
+        public TestBase(ITestOutputHelper output)
         {
+            _output = output;
             _sampleFileCount = int.Parse(GetConfig("SampleFileCount"));
             _dataSetSize = int.Parse(GetConfig("DataSetSize"));
         }
@@ -44,6 +47,20 @@ namespace SyncTK.Test.UnitTests
                 string resourceData = reader.ReadToEnd();
                 return string.Format(resourceData, param);
             }
+        }
+
+        protected void WritePipelineOutput(Pipeline pipeline)
+        {
+            WritePipelineLogEntry(pipeline, "TotalInputFiles");
+            WritePipelineLogEntry(pipeline, "Rows");
+            WritePipelineLogEntry(pipeline, "TotalOutputFiles");
+        }
+
+        protected void WritePipelineLogEntry(Pipeline pipeline, string key)
+        {
+            var find = pipeline.Log.Find(x => x.Key == key);
+            if (find.Key != null)
+                _output.WriteLine($"...{key} {find.Value}");
         }
     }
 }

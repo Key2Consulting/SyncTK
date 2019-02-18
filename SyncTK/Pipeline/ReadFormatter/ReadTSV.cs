@@ -54,7 +54,7 @@ namespace SyncTK
         {
             // If files have headers and we've already read a file, eat the next line so it doesn't end up 
             // in the data stream.
-            if (_header && _readCount > 0)
+            if (_header && _totalReadCount > 0)
             {
                 var line = _reader.ReadLine();
                 if (line != _firstLine)
@@ -66,9 +66,9 @@ namespace SyncTK
         {
             // Read the next line from the input stream. If the first line, we've already read it earlier during initialization
             // unless it was the header
-            _readCount++;
+            _totalReadCount++;
             string line = "";
-            if (_readCount > 1 || _header)
+            if (_totalReadCount > 1 || _header)
             {
                 line = _reader.ReadLine();
             }

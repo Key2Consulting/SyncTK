@@ -15,7 +15,7 @@ namespace SyncTK.Internal
         protected object [] _readBuffer;
         protected IEnumerator<object> _input;
         protected StreamReader _reader;
-        protected int _readCount = 0;
+        protected int _totalReadCount = 0;
 
         internal ReadFormatter()
         {
@@ -282,7 +282,7 @@ namespace SyncTK.Internal
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error in TSVReader reading line {_readCount}.", ex);
+                throw new Exception($"Error in TSVReader reading line {_totalReadCount}.", ex);
             }
         }
 
