@@ -84,7 +84,7 @@ namespace SyncTK
                 reader.Dispose();
             }
 
-            _pipeline.AddLog("TotalInputFiles", _inputFiles.Count);
+            _pipeline.AddLog("InputFileCount", _inputFiles.Count);
             foreach (var file in _inputFiles)
                 _pipeline.AddLog("InputFile", file);
         }

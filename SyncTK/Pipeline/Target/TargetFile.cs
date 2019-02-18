@@ -43,7 +43,7 @@ namespace SyncTK
             }
 
             // Output log information.
-            _pipeline.AddLog("TotalOutputFiles", _outputFiles.Count);
+            _pipeline.AddLog("OutputFileCount", _outputFiles.Count);
             foreach (var file in _outputFiles)
                 _pipeline.AddLog("OutputFile", file);
         }

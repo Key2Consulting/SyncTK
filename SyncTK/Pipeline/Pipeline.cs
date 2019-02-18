@@ -114,11 +114,12 @@ namespace SyncTK
             return this;
         }
 
-        public Task ExecAsync()
+        public Task<Pipeline> ExecAsync()
         {
-            return new Task(() =>
+            return new Task<Pipeline>(() =>
             {
                 this.Exec();
+                return this;
             });
         }
        #endregion

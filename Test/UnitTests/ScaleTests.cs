@@ -21,7 +21,7 @@ namespace SyncTK.Test.UnitTests
         [Fact]
         public void AllSampleFilesMultiParquetAsync()
         {
-            var tasks = new List<Task>
+            var tasks = new List<Task<Pipeline>>
             {
                 new Pipeline()
                     .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple*.parquet"))
@@ -63,7 +63,7 @@ namespace SyncTK.Test.UnitTests
         [Fact]
         public void AllSampleFilesDBAsync()
         {
-            var tasks = new List<Task>
+            var tasks = new List<Task<Pipeline>>
             {
                 new Pipeline()
                     .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple*.parquet"))
@@ -101,7 +101,7 @@ namespace SyncTK.Test.UnitTests
         [Fact]
         public void ParquetComplexParallelDBAsync()
         {
-            var tasks = new List<Task>();
+            var tasks = new List<Task<Pipeline>>();
 
             for (int i = 0; i < _sampleFileCount; i++)
             {

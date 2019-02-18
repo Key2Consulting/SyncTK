@@ -51,9 +51,9 @@ namespace SyncTK.Test.UnitTests
 
         protected void WritePipelineOutput(Pipeline pipeline)
         {
-            WritePipelineLogEntry(pipeline, "TotalInputFiles");
+            WritePipelineLogEntry(pipeline, "InputFileCount");
             WritePipelineLogEntry(pipeline, "Rows");
-            WritePipelineLogEntry(pipeline, "TotalOutputFiles");
+            WritePipelineLogEntry(pipeline, "OutputFileCount");
         }
 
         protected void WritePipelineLogEntry(Pipeline pipeline, string key)
