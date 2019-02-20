@@ -13,6 +13,7 @@ namespace SyncTK
         protected int _batchSize = 0;
         protected bool _create;
         protected bool _overwrite;
+        protected bool _compress;
         protected string _connectionString;
         protected string _server;
         protected string _database;
@@ -22,17 +23,18 @@ namespace SyncTK
         protected string _query;
         protected SqlConnection _connection;
 
-        public TargetSqlServer(string connectionString, string schema, string table, bool create = true, bool overwrite = false, int timeout = 3600, int batchSize = 10000)
+        public TargetSqlServer(string connectionString, string schema, string table, bool create = true, bool overwrite = false, bool compress = true, int timeout = 3600, int batchSize = 10000)
         {
             _connectionString = connectionString;
             _schema = schema;
             _table = table;
             _create = create;
             _overwrite = overwrite;
+            _compress = compress;
             _batchSize = batchSize;
         }
 
-        public TargetSqlServer(string server, string database, string schema, string table, bool create = true, bool overwrite = false, int timeout = 3600, int batchSize = 10000)
+        public TargetSqlServer(string server, string database, string schema, string table, bool create = true, bool overwrite = false, bool compress = true, int timeout = 3600, int batchSize = 10000)
         {
             _server = server;
             _database = database;
@@ -40,6 +42,7 @@ namespace SyncTK
             _table = table;
             _create = create;
             _overwrite = overwrite;
+            _compress = compress;
             _batchSize = batchSize;
         }
 
@@ -113,11 +116,8 @@ namespace SyncTK
                     + ",";
             }
 
-            var createSQL = $"CREATE TABLE [{_schema}].[{_table}]( {columnSQL} ) WITH (DATA_COMPRESSION = PAGE)";
-            var dropSQL = _overwrite ? $"DROP TABLE IF EXISTS {_schema}].[{_table}]( {columnSQL} )" : "";
-            var script = $"IF OBJECT_ID('[{_schema}].[{_table}]') IS NULL{Environment.NewLine}    {createSQL}";
-
             // Execute the command.
+            var script = GetResource("SqlServer.CreateTable.sql", _schema, _table, columnSQL, _overwrite, _compress);
             var cmd = _connection.CreateCommand();
             cmd.CommandText = script;
             cmd.ExecuteNonQuery();

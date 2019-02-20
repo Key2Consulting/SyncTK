@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -72,6 +74,22 @@ namespace SyncTK.Internal
                 }
             }
             return _typeConversionTable;
+        }
+        
+        internal string GetResource(string name, params object[] args)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "SyncTK.Resource." + name;
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                string resourceData = reader.ReadToEnd();
+                if (args == null)
+                    return resourceData;
+                else
+                    return string.Format(resourceData, args);
+            }
         }
     }
 }
