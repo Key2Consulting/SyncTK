@@ -17,7 +17,7 @@ namespace SyncTK
         }
 
         #region Client Builder Interface
-        public Pipeline From(Component connector)
+        public Pipeline From(Source connector)
         {
             _component.Add((Component)connector);
             return this;

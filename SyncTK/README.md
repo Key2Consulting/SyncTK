@@ -9,3 +9,5 @@
 - Memory source/target
 - HDFS support
 - REST API source/target
+- Preserve binary in text files via hex
+- Compression. Could be a separate component, or feature added to existing source/target components. See PowerSync project for example.
