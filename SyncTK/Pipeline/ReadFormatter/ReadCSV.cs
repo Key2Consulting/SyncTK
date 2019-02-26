@@ -2,43 +2,44 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using SyncTK.Internal;
 
 namespace SyncTK
 {
-    public class ReadTSV : ReadFormatter
+    public class ReadCSV : ReadFormatter
     {
-        protected const string _delimeter = "\t";
-        protected string[] _splitDelimeter;
+        // REGEX from https://stackoverflow.com/questions/18144431/regex-to-split-a-csv
+        protected const string _regexParseExpression = @"(?:,""|^"")(""""|[\w\W]*?)(?="",|""$)|(?:,(?!"")|^(?!""))([^,]*?)(?=$|,)|(\r\n|\n)";
+
         protected bool _header = false;
         protected string _firstLine;
         protected string _line;
 
-        public ReadTSV() : this(true)
+        public ReadCSV() : this(true)
         {
         }
 
-        public ReadTSV(bool header)
+        public ReadCSV(bool header)
         {
             _header = header;
         }
 
         protected override void OnBeginReading()
         {
-            _splitDelimeter = new string[] { _delimeter };
-
             // Even if no header is set, we still need to know how many columns there are.
             _firstLine = _reader.ReadLine();
-            var columns = _firstLine.Split(_splitDelimeter, StringSplitOptions.None);
+
+            var matches = Regex.Matches(_firstLine, _regexParseExpression, RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
             // Foreach of the extract columns from the first row
-            for (var i = 0; i < columns.Length; i++)
+            for (var i = 0; i < matches.Count; i++)
             {
                 // Even though we only support the string data type, we must generate a SchemaTable
                 // to adhere to the IDataReader standard (and required by importers).
                 var columnSchema = new ColumnSchema()
                 {
-                    ColumnName = _header ? columns[i] : i.ToString(),       // if no header, use the column ordinal
+                    ColumnName = _header ? matches[i].Groups[2].Value : i.ToString(),       // if no header, use the column ordinal
                     ColumnSize = -1,
                     DataType = typeof(System.String),
                     DataTypeName = "STRING",
@@ -82,16 +83,20 @@ namespace SyncTK
                 return false;
             }
 
-            // Use simple delimeter parsing (i.e. Split) with TSV.
-            var columns = line.Split(_splitDelimeter, StringSplitOptions.None);
-
-            // If first record, initialize. Must initialize within our read logic since we're streaming and
-            // we need to gather some basic information about the data such as column count.
+            // CSV must get the values via a regex, because the values themselve may contain commas
+            var matches = Regex.Matches(line, _regexParseExpression, RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
             // Foreach of the extract columns
-            for (var i = 0; i < columns.Length; i++)
+            for (var i = 0; i < matches.Count; i++)
             {
-                _readBuffer[i] = columns[i];
+                if (matches[i].Groups[1].Value.Length > 0)
+                {
+                    _readBuffer[i] = matches[i].Groups[1].Value;
+                }
+                else
+                {
+                    _readBuffer[i] = matches[i].Groups[2].Value;
+                }
             }
 
             return true;

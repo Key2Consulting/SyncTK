@@ -1,6 +1,7 @@
 ﻿SELECT TOP {0}
 	CAST(ROW_NUMBER() OVER(ORDER BY t.object_id) AS INT) [Int]
     ,NEWID() [UniqueIdentifier]
+    ,CAST(1 AS BIT) [Bit]
     ,CAST(200 AS TINYINT) [TinyInt]
     ,CAST(-20000 AS SMALLINT) [SmallInt]
     ,CAST(2000000000000000000 AS BIGINT) [BigInt]

@@ -232,6 +232,9 @@ namespace SyncTK.Internal
                     case "SINGLE":
                         map.Target.DataTypeName = "FLOAT";
                         break;
+                    case "BOOLEAN":
+                        map.Target.DataTypeName = "BIT";
+                        break;
                     case "BYTE[]":
                         map.Target.DataTypeName = "VARBINARY";
                         break;
@@ -366,6 +369,71 @@ namespace SyncTK.Internal
             //    default:
             //        break;
             //}
+        }
+
+        protected void MapReadJSON(TypeConversionMap map)
+        {
+            switch (map.Source.DataTypeName.ToUpper())
+            {
+                case "DECIMAL":
+                    map.Target.DataType = typeof(decimal);
+                    map.Target.NumericPrecision = 38;
+                    map.Target.NumericScale = 18;
+                    map.Target.ColumnSize = 16;
+                    break;
+                case "STRING":
+                case "ARRAYLIST":
+                    map.Target.DataType = typeof(string);
+                    break;
+                case "INT16":
+                    map.Target.DataType = typeof(Int16);
+                    map.Target.ColumnSize = sizeof(Int16);
+                    break;
+                case "INT32":
+                    map.Target.DataType = typeof(Int32);
+                    map.Target.ColumnSize = sizeof(Int32);
+                    break;
+                case "INT64":
+                    map.Target.DataType = typeof(Int64);
+                    map.Target.ColumnSize = sizeof(Int64);
+                    break;
+                case "BOOLEAN":
+                    map.Target.DataType = typeof(bool);
+                    map.Target.ColumnSize = sizeof(bool);
+                    break;
+                default:
+                    break;
+            }
+
+            map.Target.DataTypeName = StripNamespace(map.Target.DataType);      // derive type name off actual type.
+        }
+
+        protected void MapWriteJSON(TypeConversionMap map)
+        {
+            map.Target.DataTypeName = StripNamespace(map.Target.DataType);      // derive type name off actual type.
+
+            switch (map.Target.DataTypeName.ToUpper())
+            {
+                case "SBYTE":
+                case "USHORT":
+                case "BYTE":
+                case "INT16":
+                case "SHORT":
+                    map.Target.DataTypeName = "Short";
+                    map.Target.DataType = typeof(short);
+                    break;
+                case "FLOAT":
+                case "SINGLE":
+                    map.Target.DataTypeName = "Float";
+                    map.Target.DataType = typeof(float);
+                    break;
+                case "BYTE[]":
+                    map.Target.DataTypeName = "String";
+                    map.Target.DataType = typeof(string);
+                    break;
+                default:
+                    break;
+            }
         }
 
         protected T Cast<T>(object value)

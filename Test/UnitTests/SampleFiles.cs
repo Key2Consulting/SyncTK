@@ -37,6 +37,26 @@ namespace SyncTK.Test.UnitTests
         }
 
         [Fact]
+        public void GenerateCSVSimple()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerSimple.sql")))
+                .WriteFormat(new WriteCSV(true, _maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\CSVSimple_*.csv"))
+                .Exec());
+        }
+
+        [Fact]
+        public void GenerateCSVComplex()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
+                .WriteFormat(new WriteCSV(true, _maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\CSVComplex_*.csv"))
+                .Exec());
+        }
+
+        [Fact]
         public void GenerateParquetSimple()
         {
             WritePipelineOutput(new Pipeline()
@@ -53,6 +73,26 @@ namespace SyncTK.Test.UnitTests
                 .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
                 .WriteFormat(new WriteParquet(true, _maxRowsPerRowGroup, _maxRowsPerFile))
                 .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex_*.parquet"))
+                .Exec());
+        }
+
+        [Fact]
+        public void GenerateJSONSimple()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerSimple.sql")))
+                .WriteFormat(new WriteJSON(_maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\JSONSimple_*.json"))
+                .Exec());
+        }
+
+        [Fact]
+        public void GenerateJSONComplex()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
+                .WriteFormat(new WriteJSON(_maxRowsPerFile))
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\JSONComplex_*.json"))
                 .Exec());
         }
     }

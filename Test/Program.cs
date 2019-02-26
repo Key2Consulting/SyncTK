@@ -48,7 +48,7 @@ namespace SyncTK.Test
             {
                 file.Delete();
             }
-            
+
             // Setup SQL Server Test Database
             string sql = @"
                 IF EXISTS(SELECT * FROM sys.databases WHERE [name] = 'SyncTK')
@@ -57,7 +57,7 @@ namespace SyncTK.Test
                     EXEC sp_executesql N'DROP DATABASE [SyncTK]'
                 END
                 CREATE DATABASE [SyncTK]";
-            
+
             using (var c = new SqlConnection($"Server={cfg.GetConfig("SQLServer")};Integrated Security=true;Database=master"))
             {
                 c.Open();

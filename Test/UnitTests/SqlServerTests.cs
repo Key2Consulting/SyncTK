@@ -52,6 +52,46 @@ namespace SyncTK.Test.UnitTests
         }
 
         [Fact]
+        public void CSVToDBSimple()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\CSVSimple*.csv"))
+                .ReadFormat(new ReadCSV())
+                .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "CSVToDBSimple", true))
+                .Exec());
+        }
+
+        [Fact]
+        public void CSVToDBComplex()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\CSVComplex*.csv"))
+                .ReadFormat(new ReadCSV())
+                .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "CSVToDBComplex", true))
+                .Exec());
+        }
+
+        [Fact]
+        public void JSONToDBSimple()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\JSONSimple*.json"))
+                .ReadFormat(new ReadJSON())
+                .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "JSONToDBSimple", true))
+                .Exec());
+        }
+
+        [Fact]
+        public void JSONToDBComplex()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\JSONComplex*.json"))
+                .ReadFormat(new ReadJSON())
+                .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "JSONToDBComplex", true))
+                .Exec());
+        }
+
+        [Fact]
         public void DBToDBSimple()
         {
             WritePipelineOutput(new Pipeline()
@@ -66,6 +106,16 @@ namespace SyncTK.Test.UnitTests
             WritePipelineOutput(new Pipeline()
                 .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
                 .Into(new TargetSqlServer(GetConfig("SQLServer"), "SyncTK", "dbo", "DBToDBComplex", true))
+                .Exec());
+        }
+
+        [Fact]
+        public void DBToJSONComplex()
+        {
+            WritePipelineOutput(new Pipeline()
+                .From(new SourceSqlServer(GetConfig("SQLServer"), "SyncTK", GetResource("SqlServerComplex.sql")))
+                .WriteFormat(new WriteJSON())
+                .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\DBToJSONComplex*.json"))
                 .Exec());
         }
     }

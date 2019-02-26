@@ -1,7 +1,8 @@
 ﻿-- If overwrite specified, drop the target table first.
 IF '{3}' = 'True'
 BEGIN
-	DROP TABLE IF EXISTS [{0}].[{1}]
+	IF OBJECT_ID('[{0}].[{1}]') IS NOT NULL
+		DROP TABLE [{0}].[{1}]
 END
 
 -- If the table already exists, do not create. If it wasn't dropped above, then assume we're appending.
