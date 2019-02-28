@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.IO;
 using System.Text;
 using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 using SyncTK.Internal;
 
 namespace SyncTK
@@ -50,10 +51,7 @@ namespace SyncTK
                 AddProperty(dataRow, _reader.GetName(i), _reader.GetValue(i));
             }
 
-            var serializer = new JavaScriptSerializer();
-            serializer.RegisterConverters(new JavaScriptConverter[] { new ExpandoJSONConverter() });
-            var json = serializer.Serialize(dataRow);
-
+            var json = JsonConvert.SerializeObject(dataRow);
             _writer.Write(json);
         }
 
@@ -65,43 +63,6 @@ namespace SyncTK
                 exDict[name] = value;
             else
                 exDict.Add(name, value);
-        }
-    }
-
-    //special serializer that will flatten out our expando object in the manner we want
-    public class ExpandoJSONConverter : JavaScriptConverter
-    {
-        public override IEnumerable<Type> SupportedTypes
-        {
-            get
-            {
-                return new ReadOnlyCollection<Type>(new Type[] { typeof(System.Dynamic.ExpandoObject) });
-            }
-        }
-
-        public override IDictionary<string, object> Serialize(object obj, JavaScriptSerializer serializer)
-        {
-            var result = new Dictionary<string, object>();
-            var dictionary = obj as IDictionary<string, object>;
-            foreach (var item in dictionary)
-            {
-                //format DateTime into the "preferred" format for JSON (ISO 8601)
-                if (item.Value is DateTimeOffset)
-                {
-                    var formattedDateString = ((DateTimeOffset)item.Value).ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"); ;
-                    result.Add(item.Key, formattedDateString);
-                }
-                else
-                {
-                    result.Add(item.Key, item.Value);
-                }
-            }
-            return result;
-        }
-
-        public override object Deserialize(IDictionary<string, object> dictionary, Type type, JavaScriptSerializer serializer)
-        {
-            throw new NotImplementedException();
         }
     }
 }

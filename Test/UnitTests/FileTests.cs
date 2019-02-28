@@ -103,7 +103,7 @@ namespace SyncTK.Test.UnitTests
         public void ParquetToTSVComplex()
         {
             WritePipelineOutput(new Pipeline()
-                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple*.parquet"))
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex*.parquet"))
                 .ReadFormat(new ReadParquet())
                 .WriteFormat(new WriteTSV())
                 .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetToTSVComplex*.txt"))
@@ -125,7 +125,7 @@ namespace SyncTK.Test.UnitTests
         public void ParquetToCSVComplex()
         {
             WritePipelineOutput(new Pipeline()
-                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple*.parquet"))
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex*.parquet"))
                 .ReadFormat(new ReadParquet())
                 .WriteFormat(new WriteCSV())
                 .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetToCSVComplex*.csv"))
@@ -147,7 +147,7 @@ namespace SyncTK.Test.UnitTests
         public void ParquetToJSONComplex()
         {
             WritePipelineOutput(new Pipeline()
-                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetSimple*.parquet"))
+                .From(new SourceFile($"{GetConfig("TempFilesRoot")}\\ParquetComplex*.parquet"))
                 .ReadFormat(new ReadParquet())
                 .WriteFormat(new WriteJSON())
                 .Into(new TargetFile($"{GetConfig("TempFilesRoot")}\\ParquetToJSONComplex*.json"))

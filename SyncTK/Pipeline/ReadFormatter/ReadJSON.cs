@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Web.Script.Serialization;
+using Newtonsoft.Json.Linq;
 using SyncTK.Internal;
 
 namespace SyncTK
@@ -14,7 +15,7 @@ namespace SyncTK
     public class ReadJSON : ReadFormatter
     {
         protected string _json;
-        protected dynamic _jsonObj;
+        protected dynamic _jsonObjArray;
         protected bool _firstFile = true;
         protected int _fileReadCount = 0;
 
@@ -25,29 +26,29 @@ namespace SyncTK
         protected override void OnBeginReading()
         {
             _json = _reader.ReadToEnd();
-
-            var serializer = new JavaScriptSerializer();
-            serializer.RegisterConverters(new[] { new DynamicJsonConverter() });
-            _jsonObj = serializer.Deserialize(_json, typeof(object));
+            _jsonObjArray = JArray.Parse(_json);
 
             //build the column info from the first record
-            if(_jsonObj.Length > 0)
+            if(_jsonObjArray.Count > 0)
             {
-                DynamicJsonObject obj = _jsonObj[0];
+                JObject jobj = _jsonObjArray[0];
 
-                foreach (var key in obj.Dictionary.Keys)
+                foreach (var item in jobj)
                 {
+                    string name = item.Key;
+                    JValue jvalue = (JValue)item.Value;
+
                     var columnSchema = new ColumnSchema()
                     {
-                        ColumnName = key,
+                        ColumnName = item.Key,
                         ColumnSize = -1,
-                        DataType = obj.Dictionary[key].GetType(),
-                        DataTypeName = obj.Dictionary[key].GetType().ToString(),
+                        DataType = jvalue.Value.GetType(),
+                        DataTypeName = jvalue.Value.GetType().ToString(),
                         AllowNull = true
                     };
 
                     _columnSchema.Add(columnSchema);
-                }
+                }   
             }
         }
 
@@ -64,10 +65,7 @@ namespace SyncTK
             else
             {
                 _json = _reader.ReadToEnd();
-
-                var serializer = new JavaScriptSerializer();
-                serializer.RegisterConverters(new[] { new DynamicJsonConverter() });
-                _jsonObj = serializer.Deserialize(_json, typeof(object));
+                _jsonObjArray = JArray.Parse(_json);
             }
         }
 
@@ -76,79 +74,24 @@ namespace SyncTK
         protected override bool OnReadLine()
         {
             // If no data is left, we must be at the end of the file.
-            if (_fileReadCount >= _jsonObj.Length)
+            if (_fileReadCount >= _jsonObjArray.Count)
             {
                 return false;
             }
 
-            DynamicJsonObject obj = _jsonObj[_fileReadCount];
+            JObject jobj = _jsonObjArray[_fileReadCount];
 
             var i = 0;
-            foreach (var key in obj.Dictionary.Keys)
+            foreach (var item in jobj)
             {
-                _readBuffer[i] = obj.Dictionary[key];
+                JValue jvalue = (JValue)item.Value;
+                _readBuffer[i] = jvalue.Value;
                 i++;
             }
 
             _fileReadCount++;
             _totalReadCount++;
             return true;
-        }
-    }
-
-    public class DynamicJsonObject : DynamicObject
-    {
-        public IDictionary<string, object> Dictionary { get; set; }
-
-        public DynamicJsonObject(IDictionary<string, object> dictionary)
-        {
-            this.Dictionary = dictionary;
-        }
-
-        public override bool TryGetMember(GetMemberBinder binder, out object result)
-        {
-            result = this.Dictionary[binder.Name];
-
-            if (result is IDictionary<string, object>)
-            {
-                result = new DynamicJsonObject(result as IDictionary<string, object>);
-            }
-            else if (result is ArrayList && (result as ArrayList) is IDictionary<string, object>)
-            {
-                result = new List<DynamicJsonObject>((result as ArrayList).ToArray().Select(x => new DynamicJsonObject(x as IDictionary<string, object>)));
-            }
-            else if (result is ArrayList)
-            {
-                result = new List<object>((result as ArrayList).ToArray());
-            }
-
-            return this.Dictionary.ContainsKey(binder.Name);
-        }
-    }
-
-    public class DynamicJsonConverter : JavaScriptConverter
-    {
-        public override IEnumerable<Type> SupportedTypes
-        {
-            get { return new ReadOnlyCollection<Type>(new List<Type>(new Type[] { typeof(object) })); }
-        }
-
-        public override IDictionary<string, object> Serialize(object obj, JavaScriptSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override object Deserialize(IDictionary<string, object> dictionary, Type type, JavaScriptSerializer serializer)
-        {
-            if (dictionary == null)
-                throw new ArgumentNullException("dictionary");
-
-            if (type == typeof(object))
-            {
-                return new DynamicJsonObject(dictionary);
-            }
-
-            return null;
         }
     }
 }

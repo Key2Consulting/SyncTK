@@ -169,7 +169,7 @@ namespace SyncTK.Internal
                     map.Target.DataType = typeof(string);
                     break;
                 case "TIME":
-                    map.Target.DataType = typeof(DateTimeOffset);
+                    map.Target.DataType = typeof(TimeSpan);
                     break;
                 case "SQL_VARIANT":
                     map.Target.DataType = typeof(string);
@@ -254,9 +254,9 @@ namespace SyncTK.Internal
                     break;
                 case "DECIMAL":
                     map.Target.DataType = typeof(decimal);
+                    map.Target.ColumnSize = 16;
                     map.Target.NumericPrecision = 38;
                     map.Target.NumericScale = 18;
-                    map.Target.ColumnSize = 16;
                     break;
                 case "DOUBLE":
                     map.Target.DataType = typeof(double);
@@ -338,6 +338,10 @@ namespace SyncTK.Internal
                     map.Target.DataTypeName = "ByteArray";
                     map.Target.DataType = typeof(byte[]);
                     break;
+                case "TIMESPAN":
+                    map.Target.DataType = typeof(DateTimeOffset);
+                    map.Target.DataTypeName = "DateTimeOffset";
+                    break;
                 default:
                     break;
             }
@@ -375,11 +379,11 @@ namespace SyncTK.Internal
         {
             switch (map.Source.DataTypeName.ToUpper())
             {
-                case "DECIMAL":
-                    map.Target.DataType = typeof(decimal);
+                case "DOUBLE":
+                    map.Target.DataType = typeof(double);
+                    map.Target.ColumnSize = sizeof(double);
                     map.Target.NumericPrecision = 38;
                     map.Target.NumericScale = 18;
-                    map.Target.ColumnSize = 16;
                     break;
                 case "STRING":
                 case "ARRAYLIST":
@@ -396,6 +400,9 @@ namespace SyncTK.Internal
                 case "INT64":
                     map.Target.DataType = typeof(Int64);
                     map.Target.ColumnSize = sizeof(Int64);
+                    break;
+                case "DATETIME":
+                    map.Target.DataType = typeof(DateTime);
                     break;
                 case "BOOLEAN":
                     map.Target.DataType = typeof(bool);
